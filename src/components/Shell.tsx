@@ -50,18 +50,18 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Primary">
-            <NavLink to={{ name: 'home' }} label="Home" icon="home" active={route.name === 'home'} />
-            <NavLink to={{ name: 'discover' }} label="Discover" icon="compass" active={route.name === 'discover'} />
+            <NavLink to={{ name: 'home' }} label="Feed" icon="home" active={route.name === 'home'} />
             {!isBiz && <NavLink to={{ name: 'list' }} label="My bucketlist" icon="list" active={route.name === 'list'} />}
           </nav>
 
-          <form onSubmit={submit} className="ml-auto hidden max-w-[320px] flex-1 md:block" role="search">
+          <form onSubmit={submit} className="ml-auto hidden max-w-[240px] flex-1 md:block" role="search">
             <label className="flex h-11 items-center gap-2 rounded-full bg-[var(--color-mist)] px-4 text-[var(--color-ink-3)] ring-[var(--color-ocean)] transition focus-within:bg-white focus-within:ring-2">
               <Icon name="search" size={17} />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search goals — surfing, pottery, Japan…"
+                placeholder="Search"
+                onFocus={() => route.name !== 'discover' && go({ name: 'discover' })}
                 className="w-full bg-transparent text-[15px] text-[var(--color-night)] outline-none placeholder:text-[var(--color-ink-4)]"
                 aria-label="Search goals"
               />
@@ -119,8 +119,8 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* ---------------- Mobile tab bar ---------------- */}
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-line)] bg-[var(--color-cloud)]/95 backdrop-blur-xl md:hidden" aria-label="Primary">
         <div className="mx-auto grid h-[66px] max-w-md grid-cols-5 items-center px-2">
-          <TabLink to={{ name: 'home' }} icon="home" label="Home" active={route.name === 'home'} />
-          <TabLink to={{ name: 'discover' }} icon="compass" label="Discover" active={route.name === 'discover'} />
+          <TabLink to={{ name: 'home' }} icon="home" label="Feed" active={route.name === 'home'} />
+          <TabLink to={{ name: 'discover' }} icon="search" label="Search" active={route.name === 'discover'} />
           <div className="flex justify-center">
             {isBiz ? (
               <button onClick={() => open({ type: 'guide' })} className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-night)] text-[var(--color-sun)]" aria-label="Demo tour">

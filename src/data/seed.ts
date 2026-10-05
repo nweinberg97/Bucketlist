@@ -2,7 +2,7 @@ import type { AppState, Notification } from '../types';
 import { SEED_PEOPLE } from './people';
 import { seedGoals } from './goals';
 
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 const H = 3_600_000;
 const D = 24 * H;
@@ -65,7 +65,7 @@ export function createSeedState(now = Date.now()): AppState {
       { id: 'seed-i-2', goalId: 'alex-wct', fromId: 'noah', mode: 'self', message: 'Did it twice. Happy to lend my bear canister.', at: now - 5 * H },
     ],
     sponsorOffers: [
-      { id: 'seed-s-1', goalId: 'maya-film', fromId: 'reel', products: 'Cinema camera package (body, 3 primes, monitor) for 4 shoot days', status: 'accepted', at: now - 4 * D },
+      { id: 'seed-s-1', goalId: 'maya-film', fromId: 'reel', experience: 'Reel Rentals Night Shoot: our full camera package for four days, plus a camera assistant on the diner night.', involvement: ['Lend our expertise', 'Capture & share it'], products: 'Cinema camera package (body, 3 primes, monitor) for 4 shoot days', status: 'accepted', at: now - 4 * D },
     ],
     promotions: [
       { id: 'seed-p-1', goalId: 'maya-film', promoterId: 'theo', caption: "Maya cut half the films I've played on. Now it's her turn — help her make this one.", status: 'approved', at: now - 40 * H },

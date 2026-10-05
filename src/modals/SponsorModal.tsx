@@ -9,18 +9,33 @@ import { PERSONAS } from '../data/people';
 type Kind = 'funding' | 'products' | 'services' | 'space' | 'other';
 
 const KINDS: { k: Kind; icon: IconName; label: string; hint: string; placeholder: string }[] = [
-  { k: 'funding', icon: 'coin', label: 'Funding', hint: 'Cash toward the goal', placeholder: '250' },
-  { k: 'products', icon: 'store', label: 'Products / equipment', hint: 'Gear, supplies, materials', placeholder: 'e.g. Exterior paint for the whole wall' },
-  { k: 'services', icon: 'hand', label: 'Services / expertise', hint: 'Lessons, skills, time', placeholder: 'e.g. A 2-hour lesson with an instructor' },
+  { k: 'products', icon: 'store', label: 'Products / gear', hint: 'Equipment, supplies, materials', placeholder: 'e.g. Exterior paint for the whole wall' },
+  { k: 'services', icon: 'hand', label: 'Services / expertise', hint: 'Lessons, skills, your team’s time', placeholder: 'e.g. A 2-hour lesson with an instructor' },
   { k: 'space', icon: 'pin', label: 'Space / venue', hint: 'A wall, a room, a stage', placeholder: 'e.g. Our back wall on West 4th' },
-  { k: 'other', icon: 'sparkle', label: 'Other', hint: 'Discounts, transport, promo…', placeholder: 'e.g. We’ll feature it on our Instagram' },
+  { k: 'funding', icon: 'coin', label: 'Funding', hint: 'Cash toward what’s left', placeholder: '250' },
+  { k: 'other', icon: 'sparkle', label: 'Something else', hint: 'Transport, discounts, promotion…', placeholder: 'e.g. A discount for everyone who helps' },
 ];
 
+/** How a sponsor shows up — this is what makes it more than a donation. */
+const INVOLVEMENT = ['Co-host the moment', 'Capture & share it', 'Our name on the goal', 'Lend our expertise', 'A perk for everyone who helps'];
+
 /** Sensible starting offers so the demo flows — a real product would learn these from the business profile. */
-const PRESETS: Record<string, Partial<Record<Kind, string>>> = {
-  westside: { products: 'Exterior paint, primer and brushes for the whole wall', space: '' },
-  jericho: { products: 'Free paddleboard for the summer', services: '2-hour lesson with one of our instructors' },
-  reel: { products: 'Camera + lens package for 4 shoot days' },
+const PRESETS: Record<string, { experience: string; involvement: string[]; items: Partial<Record<Kind, string>> }> = {
+  westside: {
+    experience: 'Westside Wall Weekend: we supply every can, prime the wall with you, and host a free community paint day at the shop.',
+    involvement: ['Co-host the moment', 'Our name on the goal'],
+    items: { products: 'Exterior paint, primer and brushes for the whole wall', space: 'The shop’s back lot for the paint day' },
+  },
+  jericho: {
+    experience: 'First Light Paddle: a sunrise lesson off Jericho with one of our coaches, a board for the summer, and photos of your first stand.',
+    involvement: ['Co-host the moment', 'Capture & share it'],
+    items: { products: 'A paddleboard for the summer', services: 'A 2-hour sunrise lesson with a coach' },
+  },
+  reel: {
+    experience: 'Reel Rentals Night Shoot: our full camera package for four days, plus a camera assistant on the diner night.',
+    involvement: ['Lend our expertise', 'Capture & share it'],
+    items: { products: 'Camera + lens package for 4 shoot days', services: 'A camera assistant for the night shoot' },
+  },
 };
 
 export function SponsorModal({ goalId }: { goalId: string }) {
@@ -28,13 +43,18 @@ export function SponsorModal({ goalId }: { goalId: string }) {
   const { close, go, toast, open } = useUI();
   const goal = state.goals[goalId];
   const owner = state.people[goal.ownerId];
-  const preset = PRESETS[me.id] ?? {};
-  const [on, setOn] = useState<Set<Kind>>(() => new Set((Object.keys(preset) as Kind[]).filter((k) => preset[k])));
-  const [vals, setVals] = useState<Record<Kind, string>>({ funding: '', products: '', services: '', space: '', other: '', ...preset } as Record<Kind, string>);
+  const preset = PRESETS[me.id];
+  const items = preset?.items ?? {};
+  const [experience, setExperience] = useState(preset?.experience ?? '');
+  const [involvement, setInvolvement] = useState<Set<string>>(() => new Set(preset?.involvement ?? []));
+  const [on, setOn] = useState<Set<Kind>>(() => new Set((Object.keys(items) as Kind[]).filter((k) => items[k])));
+  const [vals, setVals] = useState<Record<Kind, string>>({ funding: '', products: '', services: '', space: '', other: '', ...items } as Record<Kind, string>);
   const [sent, setSent] = useState(false);
 
   const offer = {
     goalId,
+    experience: experience.trim() || undefined,
+    involvement: [...involvement],
     funding: on.has('funding') ? Number(vals.funding) || undefined : undefined,
     products: on.has('products') ? vals.products.trim() || undefined : undefined,
     services: on.has('services') ? vals.services.trim() || undefined : undefined,
@@ -74,10 +94,11 @@ export function SponsorModal({ goalId }: { goalId: string }) {
               <Avatar person={me} size={40} />
               <div>
                 <p className="text-[14px] leading-snug">
-                  <b>{me.name}</b> wants to help make your goal happen.
+                  <b>{me.name}</b> wants to make your goal happen with you.
                 </p>
-                <p className="mt-2 text-[14px]">
-                  <span className="font-semibold">Offer:</span> {summary}
+                {offer.experience && <p className="quote mt-2 text-[16px] leading-snug">“{offer.experience}”</p>}
+                <p className="mt-2 text-[13px] text-[var(--color-ink-3)]">
+                  <span className="font-semibold text-[var(--color-ink-2)]">Bringing:</span> {summary}
                 </p>
                 <div className="pointer-events-none mt-3 flex gap-2 opacity-60">
                   <span className="btn btn-help btn-sm !h-8 !text-[12px]">Accept</span>
@@ -117,7 +138,8 @@ export function SponsorModal({ goalId }: { goalId: string }) {
       <ModalClose onClose={close} />
       <div className="p-6 pr-16 sm:p-7 sm:pr-16">
         <p className="eyebrow !text-[var(--color-ocean)]">Sponsor this goal</p>
-        <h2 className="display mt-2 text-[32px] font-semibold leading-tight">Help make this goal happen.</h2>
+        <h2 className="display mt-2 text-[32px] font-semibold leading-tight">Make it happen with {owner.first}.</h2>
+        <p className="mt-2 text-[14.5px] text-[var(--color-ink-3)]">Funding is a contribution. Sponsoring is being part of it: your gear, your space, your people, and a moment with your name on it.</p>
         <div className="mt-5 flex items-center gap-3.5 rounded-2xl bg-white p-3 ring-1 ring-[var(--color-line)]">
           <GoalImage goal={goal} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl" />
           <div className="min-w-0">
@@ -138,7 +160,43 @@ export function SponsorModal({ goalId }: { goalId: string }) {
       </div>
 
       <div className="space-y-3 px-6 pb-7 sm:px-7">
-        <p className="text-[14px] font-semibold">What could you offer?</p>
+        <label className="block">
+          <span className="mb-1.5 block text-[14px] font-semibold">The experience you'd create</span>
+          <span className="mb-2 block text-[12.5px] text-[var(--color-ink-3)]">Give it a name and say what happens. This is what {owner.first} sees first.</span>
+          <textarea
+            className="field quote min-h-[92px] !text-[18px] leading-snug"
+            placeholder={`e.g. “First Light Paddle”: a sunrise lesson with our coach and a board for the summer.`}
+            value={experience}
+            onChange={(e) => setExperience(e.target.value)}
+            data-sponsor-experience
+          />
+        </label>
+
+        <div>
+          <p className="mb-2 text-[14px] font-semibold">How you'd show up</p>
+          <div className="flex flex-wrap gap-1.5">
+            {INVOLVEMENT.map((i) => (
+              <button
+                key={i}
+                type="button"
+                className="chip chip-ocean !h-8 !text-[13px]"
+                data-on={involvement.has(i)}
+                onClick={() =>
+                  setInvolvement((s) => {
+                    const n = new Set(s);
+                    if (n.has(i)) n.delete(i);
+                    else n.add(i);
+                    return n;
+                  })
+                }
+              >
+                {i}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <p className="pt-2 text-[14px] font-semibold">What you'd bring</p>
         {KINDS.map(({ k, icon, label, hint, placeholder }) => {
           const active = on.has(k);
           return (
@@ -161,7 +219,7 @@ export function SponsorModal({ goalId }: { goalId: string }) {
                       <input className="field !pl-8" inputMode="numeric" placeholder={placeholder} value={vals.funding} onChange={(e) => setVals((v) => ({ ...v, funding: e.target.value.replace(/[^0-9]/g, '') }))} autoFocus aria-label="Funding amount" />
                     </label>
                   ) : (
-                    <input className="field" placeholder={placeholder} value={vals[k]} onChange={(e) => setVals((v) => ({ ...v, [k]: e.target.value }))} autoFocus={!preset[k]} aria-label={label} />
+                    <input className="field" placeholder={placeholder} value={vals[k]} onChange={(e) => setVals((v) => ({ ...v, [k]: e.target.value }))} autoFocus={!items[k]} aria-label={label} />
                   )}
                 </div>
               )}
@@ -172,14 +230,14 @@ export function SponsorModal({ goalId }: { goalId: string }) {
         <div className="pt-3">
           <button
             className="btn btn-sponsor btn-lg w-full"
-            disabled={!summary}
+            disabled={!summary && !experience.trim()}
             onClick={() => {
               dispatch({ type: 'sponsor/offer', offer });
               setSent(true);
             }}
             data-send-sponsor
           >
-            Send sponsorship offer
+            Propose this sponsorship
           </button>
           <p className="mt-2 text-center text-[12px] text-[var(--color-ink-4)]">
             Offering as <b className="text-[var(--color-ink-3)]">{me.name}</b>. {owner.first} can accept, decline or message you.

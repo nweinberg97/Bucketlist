@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { Goal, Status } from '../types';
 import { helperCount, offerSummary, useStore, useVisibleGoals } from '../store/store';
 import { useUI } from '../store/ui';
-import { GoalCard, GoalImage, useGoalActions } from '../components/GoalCard';
+import { GoalImage, useGoalActions } from '../components/GoalCard';
+import { MiniGoal } from '../components/Feed';
 import { Avatar, AvatarStack, Empty, FundingBar, FundingLine, PrivacyBadge, PrivacyPicker, SocialBadges } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { backerCount, canSee, categoryEmoji, fundedPct, money, placeLabel, timeAgo } from '../lib/util';
@@ -159,18 +160,31 @@ export function GoalPage({ id }: { id: string }) {
 
           {sponsors.length > 0 && (
             <section>
-              <h2 className="display mb-4 text-2xl font-semibold">Sponsored by</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <h2 className="display mb-4 text-2xl font-semibold">Made possible with</h2>
+              <div className="space-y-3">
                 {sponsors.map((o) => {
                   const s = state.people[o.fromId];
                   return (
-                    <button key={o.id} onClick={() => go({ name: 'person', id: s.id })} className="flex items-start gap-3 rounded-2xl bg-[var(--color-sky-wash)] p-4 text-left">
-                      <Avatar person={s} size={40} />
-                      <span>
-                        <span className="block font-semibold">{s.name}</span>
-                        <span className="block text-[13px] text-[var(--color-ink-2)]">{offerSummary(o)}</span>
-                      </span>
-                    </button>
+                    <div key={o.id} className="rounded-[var(--radius-card)] p-5 text-white" style={{ background: 'linear-gradient(120deg,#062a78,#0b5cff 70%,#3c8dff)' }}>
+                      <button onClick={() => go({ name: 'person', id: s.id })} className="flex items-center gap-3 text-left">
+                        <Avatar person={s} size={40} />
+                        <span>
+                          <span className="block font-semibold">{s.name}</span>
+                          <span className="block text-[12.5px] text-white/70">Sponsor · {s.tagline}</span>
+                        </span>
+                      </button>
+                      {o.experience && <p className="quote mt-4 text-[22px] leading-snug">“{o.experience}”</p>}
+                      <p className="mt-3 text-[13.5px] text-white/80">{offerSummary(o)}</p>
+                      {o.involvement && o.involvement.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {o.involvement.map((i) => (
+                            <span key={i} className="pill bg-white/15 text-white">
+                              {i}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -230,10 +244,10 @@ export function GoalPage({ id }: { id: string }) {
 
           {related.length > 0 && (
             <section>
-              <h2 className="display mb-4 text-2xl font-semibold">Similar goals</h2>
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              <h2 className="display mb-1 text-2xl font-semibold">On other people's lists</h2>
+              <div className="grid gap-x-8 divide-y divide-[var(--color-line)] sm:grid-cols-2 sm:divide-y-0">
                 {related.map((g) => (
-                  <GoalCard key={g.id} goal={g} variant="compact" />
+                  <MiniGoal key={g.id} goal={g} line={`${state.people[g.ownerId].first} · ${g.hood}`} />
                 ))}
               </div>
             </section>
@@ -362,7 +376,7 @@ function ActionPanel({ goal }: { goal: Goal }) {
         <div className="rounded-[var(--radius-card)] bg-[var(--color-sand-wash)] p-5 ring-1 ring-[var(--color-sand)]">
           <p className="eyebrow">Looking for a sponsor</p>
           <p className="mt-2 text-[15px] leading-snug">{goal.sponsorship.need}</p>
-          <p className="mt-3 text-[12.5px] text-[var(--color-ink-3)]">The best sponsor isn't the one who gives the most — it's the one who removes the biggest obstacle.</p>
+          <p className="mt-3 text-[12.5px] text-[var(--color-ink-3)]">Sponsors don't just pay. They co-create the moment: gear, space, expertise, and their name on something real.</p>
         </div>
       )}
     </div>

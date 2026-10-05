@@ -120,6 +120,10 @@ export interface SponsorOffer {
   id: string;
   goalId: string;
   fromId: string;
+  /** the moment the sponsor would co-create — the heart of a sponsorship */
+  experience?: string;
+  /** how the sponsor shows up: co-hosting, capturing it, their name on it… */
+  involvement?: string[];
   funding?: number;
   products?: string;
   services?: string;

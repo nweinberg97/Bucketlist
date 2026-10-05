@@ -137,18 +137,28 @@ export function RequestCard({ kind, id }: { kind: 'sponsor' | 'promote'; id: str
     return (
       <div className="overflow-hidden rounded-[var(--radius-card)] bg-white ring-1 ring-[var(--color-line)] animate-rise" data-request="sponsor">
         <div className="flex items-center gap-2 bg-[var(--color-ocean-ink)] px-5 py-2.5 text-[12px] font-semibold tracking-[0.12em] text-white uppercase">
-          <Icon name="store" size={14} /> New sponsorship offer
+          <Icon name="store" size={14} /> New sponsorship proposal
         </div>
         <div className="p-5">
           <div className="flex items-start gap-3">
             <Avatar person={from} size={44} />
             <div className="min-w-0">
               <p className="text-[15px] leading-snug">
-                <b>{from.name}</b> wants to help make <b>{goal.title.toLowerCase()}</b> happen.
+                <b>{from.name}</b> wants to make <b>{goal.title.toLowerCase()}</b> happen with you.
               </p>
+              {offer.experience && <p className="quote mt-3 border-l-2 border-[var(--color-ocean)] pl-4 text-[19px] leading-snug">“{offer.experience}”</p>}
               <div className="mt-3 rounded-2xl bg-[var(--color-sky-wash)] px-4 py-3">
-                <p className="eyebrow !text-[10px] !text-[var(--color-ocean-deep)]">Offer</p>
-                <p className="mt-1 text-[15px] font-semibold">{offerSummary(offer)}</p>
+                <p className="eyebrow !text-[10px] !text-[var(--color-ocean-deep)]">They'd bring</p>
+                <p className="mt-1 text-[15px] font-semibold">{offerSummary(offer) || 'Their involvement, as described'}</p>
+                {offer.involvement && offer.involvement.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {offer.involvement.map((i) => (
+                      <span key={i} className="pill bg-white text-[var(--color-ocean-ink)]">
+                        {i}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -1,61 +1,43 @@
 import { useMemo, useState } from 'react';
-import { useStore, useVisibleGoals } from '../store/store';
-import { Link, useUI } from '../store/ui';
-import { GoalCard, GoalImage } from '../components/GoalCard';
-import { ListCard } from '../components/ListCard';
-import { Avatar, SectionHead } from '../components/ui';
-import { Icon, type IconName } from '../components/Icon';
-import { distanceKm, greeting, money, placeLabel, timeAgo } from '../lib/util';
+import { offerSummary, useStore, useVisibleGoals } from '../store/store';
+import { useUI } from '../store/ui';
+import { Avatar, Empty, FundingBar } from '../components/ui';
+import { Icon } from '../components/Icon';
+import { MiniGoal, PersonRow, WAYS, groupByPerson, helpingLine, matchesWay, type Way } from '../components/Feed';
+import { LOCATION_FILTERS, distanceKm, greeting, money, placeLabel, type LocationFilter } from '../lib/util';
 import { introSuggestions, matchesFor, popularity } from '../lib/search';
-import { offerSummary } from '../store/store';
 
-const IDEAS = ['Learn to surf', 'See the Northern Lights', 'Play at an open mic', 'Make pasta from scratch', 'Run a half marathon', 'Learn to DJ'];
+const IDEAS = ['Learn to surf', 'See the Northern Lights', 'Play at an open mic', 'Run a half marathon'];
 
-export const WAYS: { icon: IconName; name: string; line: string; tone: string }[] = [
-  { icon: 'hand', name: 'Help', line: 'Skills, gear, time or an intro.', tone: 'bg-[var(--color-ocean)] text-white' },
-  { icon: 'coin', name: 'Fund', line: 'Chip in toward the thing.', tone: 'bg-[var(--color-sun)] text-[var(--color-night)]' },
-  { icon: 'store', name: 'Sponsor', line: 'A business clears the obstacle.', tone: 'bg-[var(--color-ocean-ink)] text-white' },
-  { icon: 'megaphone', name: 'Promote', line: 'Share it with your people.', tone: 'bg-white text-[var(--color-night)] ring-1 ring-[var(--color-line)]' },
-];
-
+/**
+ * Home is the social feed: people's open bucketlists, one calm coloured row each.
+ * Pictures wait until you open a goal; the feed is for spontaneous inspiration.
+ */
 export function Home() {
-  const { me } = useStore();
-  return me.kind === 'business' ? <BusinessHome /> : <PersonHome />;
-}
-
-function Row({ children }: { children: React.ReactNode }) {
-  return <div className="scroll-row -mx-4 px-4 md:-mx-8 md:px-8">{children}</div>;
-}
-
-function PersonHome() {
   const { state, me } = useStore();
   const { open, go } = useUI();
   const visible = useVisibleGoals();
+  const isBiz = me.kind === 'business';
+  const [way, setWay] = useState<Way>(isBiz ? 'sponsor' : 'all');
+  const [where, setWhere] = useState<LocationFilter>('Anywhere');
   const [draft, setDraft] = useState('');
 
-  const others = visible.filter((g) => g.ownerId !== me.id);
-  const active = others.filter((g) => g.status !== 'done');
+  const open_ = visible.filter((g) => g.ownerId !== me.id && g.status !== 'done');
+  const inArea = open_.filter((g) => {
+    if (where === 'Anywhere') return true;
+    if (where === 'Near me') return (distanceKm(me.hood, g.hood) ?? 99) <= 5;
+    return g.hood === where;
+  });
+  const rows = useMemo(() => groupByPerson(state, inArea.filter((g) => matchesWay(g, way)), me), [state, inArea, way, me]);
+  const counts = useMemo(() => Object.fromEntries(WAYS.map((w) => [w.id, inArea.filter((g) => matchesWay(g, w.id)).length])), [inArea]);
+  const activeWay = WAYS.find((w) => w.id === way)!;
 
-  // Nearby people's lists — the neighbourhood, one person at a time
-  const around = useMemo(() => {
-    const owners = [...new Set(active.map((g) => g.ownerId))]
-      .map((id) => state.people[id])
-      .filter((p) => p.kind === 'person' && (distanceKm(me.hood, p.hood) ?? 99) <= 5)
-      .sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0));
-    return owners.slice(0, 8).map((owner) => {
-      const goals = active.filter((g) => g.ownerId === owner.id).sort((a, b) => (a.status === 'progress' ? -1 : 1) - (b.status === 'progress' ? -1 : 1));
-      return { owner, goals, total: goals.length };
-    });
-  }, [active, me.hood, state.people]);
-  const matches = useMemo(() => matchesFor(state, me, active).slice(0, 4), [state, me, active]);
-  const intros = useMemo(() => introSuggestions(state, me, active).slice(0, 3), [state, me, active]);
-  const rallying = useMemo(() => active.filter((g) => g.funding?.enabled || g.sponsorship?.open).sort((a, b) => popularity(state, b) - popularity(state, a)).slice(0, 6), [active, state]);
-  const mine = Object.values(state.goals).filter((g) => g.ownerId === me.id);
-  const myActive = mine.filter((g) => g.status !== 'done').sort((a, b) => (a.status === 'progress' ? -1 : 1) - (b.status === 'progress' ? -1 : 1)).slice(0, 4);
-  const completed = others
-    .filter((g) => g.status === 'done' && g.completedAt && me.network.includes(g.ownerId))
-    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
-    .slice(0, 4);
+  const matches = useMemo(() => matchesFor(state, me, open_).slice(0, 3), [state, me, open_]);
+  const intros = useMemo(() => introSuggestions(state, me, open_).slice(0, 2), [state, me, open_]);
+  const rallying = useMemo(() => open_.filter((g) => g.funding?.enabled).sort((a, b) => popularity(state, b) - popularity(state, a)).slice(0, 3), [open_, state]);
+
+  const mine = Object.values(state.goals).filter((g) => g.ownerId === me.id && g.status !== 'done').sort((a, b) => (a.status === 'progress' ? 0 : 1) - (b.status === 'progress' ? 0 : 1));
+  const myOffers = state.sponsorOffers.filter((o) => o.fromId === me.id);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,274 +47,244 @@ function PersonHome() {
 
   return (
     <div className="animate-fade">
-      {/* ---------------- Hero ---------------- */}
+      {/* ---------------- Greeting + your list ---------------- */}
       <section className="horizon-soft">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-10 px-4 pt-10 pb-12 md:px-8 md:pt-16 md:pb-16 lg:grid-cols-[1.25fr_1fr] lg:items-end">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-8 px-4 pt-9 pb-8 md:px-8 md:pt-12 lg:grid-cols-[1.35fr_1fr] lg:items-end">
           <div>
             <p className="eyebrow">
-              {greeting()}, {me.first}.
+              {greeting()}, {isBiz ? me.name : me.first}.
             </p>
-            <h1 className="display mt-3 text-[44px] font-semibold sm:text-[64px] lg:text-[80px]">
-              What do you
-              <br />
-              want to <span className="relative inline-block">do<svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 30 2, 70 2, 98 7" stroke="#ffc83d" strokeWidth="5" fill="none" strokeLinecap="round" /></svg></span>?
-            </h1>
-            <form onSubmit={submit} className="mt-8 flex max-w-xl items-center gap-2 rounded-full bg-white p-2 pl-5 shadow-[var(--shadow-lift)] ring-1 ring-[var(--color-line)]">
-              <span className="quote text-xl text-[var(--color-ink-3)]">I want to</span>
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="learn to surf…"
-                className="min-w-0 flex-1 bg-transparent text-[17px] font-medium outline-none placeholder:text-[var(--color-ink-4)]"
-                aria-label="What do you want to do?"
-              />
-              <button className="btn btn-help shrink-0" type="submit">
-                <Icon name="plus" size={18} strokeWidth={2.4} />
-                <span className="hidden sm:inline">Add it</span>
-              </button>
-            </form>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {IDEAS.slice(0, 4).map((i) => (
-                <button key={i} className="chip !h-8 !text-[13px]" onClick={() => open({ type: 'composer', title: i })}>
-                  {i}
+            <h1 className="display mt-2 text-[40px] font-semibold sm:text-[56px]">{isBiz ? 'Whose goal could you make happen?' : 'What do you want to do?'}</h1>
+            {isBiz ? (
+              <p className="mt-3 max-w-lg text-[16px] text-[var(--color-ink-3)]">Sponsoring isn't a donation. It's co-creating the moment: your gear, your space, your people, your name on something real.</p>
+            ) : (
+              <>
+                <form onSubmit={submit} className="mt-6 flex max-w-xl items-center gap-2 rounded-full bg-white p-1.5 pl-5 shadow-[var(--shadow-soft)] ring-1 ring-[var(--color-line)]">
+                  <span className="quote shrink-0 text-[19px] text-[var(--color-ink-3)]">I want to</span>
+                  <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="learn to surf…" className="min-w-0 flex-1 bg-transparent text-[16px] font-medium outline-none placeholder:text-[var(--color-ink-4)]" aria-label="What do you want to do?" />
+                  <button className="btn btn-help btn-sm shrink-0" type="submit">
+                    <Icon name="plus" size={16} strokeWidth={2.4} /> Add
+                  </button>
+                </form>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {IDEAS.map((i) => (
+                    <button key={i} className="chip !h-8 !text-[13px]" onClick={() => open({ type: 'composer', title: i })}>
+                      {i}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* your bucketlist, one tap away */}
+          <div className="rounded-[var(--radius-card)] bg-white/80 p-5 ring-1 ring-[var(--color-line)] backdrop-blur">
+            {isBiz ? (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="display text-[20px] font-semibold">Your offers</p>
+                  <span className="text-[13px] text-[var(--color-ink-3)]">{myOffers.length}</span>
+                </div>
+                {myOffers.length ? (
+                  <ul className="mt-2 divide-y divide-[var(--color-line)]">
+                    {myOffers.slice(0, 4).map((o) => {
+                      const g = state.goals[o.goalId];
+                      return (
+                        <li key={o.id}>
+                          <button onClick={() => go({ name: 'goal', id: g.id })} className="flex w-full items-center gap-3 py-2.5 text-left">
+                            <span className="text-[18px]">{g.emoji}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14.5px] font-semibold">{g.title}</span>
+                              <span className="block truncate text-[12.5px] text-[var(--color-ink-3)]">{o.experience || offerSummary(o)}</span>
+                            </span>
+                            <span className={`pill ${o.status === 'accepted' ? 'bg-[var(--color-sun)]' : o.status === 'declined' ? 'bg-[var(--color-mist)] text-[var(--color-ink-3)]' : 'bg-[var(--color-sky-wash)] text-[var(--color-ocean-deep)]'}`}>
+                              {o.status === 'accepted' ? 'On' : o.status === 'declined' ? 'Passed' : 'Waiting'}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-[14px] text-[var(--color-ink-3)]">Nothing yet. Pick a goal below where what you do removes the biggest obstacle.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <button onClick={() => go({ name: 'list' })} className="display text-[20px] font-semibold hover:underline">
+                    Your bucketlist
+                  </button>
+                  <button onClick={() => go({ name: 'list' })} className="text-[13px] font-semibold text-[var(--color-ocean)] hover:underline" data-open-my-list>
+                    Open ({mine.length}) →
+                  </button>
+                </div>
+                <ul className="mt-2 divide-y divide-[var(--color-line)]">
+                  {mine.slice(0, 4).map((g) => (
+                    <li key={g.id}>
+                      <button onClick={() => go({ name: 'goal', id: g.id })} className="flex w-full items-center gap-3 py-2.5 text-left">
+                        <span className={`h-2 w-2 shrink-0 rounded-full ${g.status === 'progress' ? 'bg-[var(--color-ocean)]' : 'ring-[1.5px] ring-[var(--color-ocean)] ring-inset'}`} />
+                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium">
+                          {g.emoji} {g.title}
+                        </span>
+                        {g.privacy !== 'public' && <Icon name={g.privacy === 'private' ? 'lock' : 'users'} size={14} className="text-[var(--color-ink-4)]" />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ---------------- The four ways — the feed's main filter ---------------- */}
+        <div className="mx-auto max-w-[1280px] px-4 pb-6 md:px-8">
+          <div className="scroll-row !gap-2 sm:grid sm:grid-cols-5" role="tablist" aria-label="Ways to help">
+            {WAYS.map((w) => {
+              const on = way === w.id;
+              return (
+                <button
+                  key={w.id}
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setWay(w.id)}
+                  className={`flex min-w-[150px] shrink-0 flex-col items-start gap-1.5 rounded-2xl p-3.5 text-left ring-1 transition sm:min-w-0 ${on ? 'bg-[var(--color-night)] text-[var(--color-cloud)] ring-transparent' : 'bg-white/70 ring-[var(--color-line)] hover:bg-white'}`}
+                  data-way={w.id}
+                >
+                  <span className="flex w-full items-center justify-between">
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full ${wayTone(w.id, on)}`}>
+                      <Icon name={w.icon} size={16} />
+                    </span>
+                    <span className={`text-[12px] font-semibold ${on ? 'text-white/60' : 'text-[var(--color-ink-4)]'}`}>{counts[w.id]}</span>
+                  </span>
+                  <span className="text-[15px] font-semibold">{w.name}</span>
+                  <span className={`hidden text-[12.5px] leading-snug sm:block ${on ? 'text-white/70' : 'text-[var(--color-ink-3)]'}`}>{w.line}</span>
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- Feed + rail ---------------- */}
+      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-10 px-4 py-8 md:px-8 lg:grid-cols-[1fr_340px]">
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="display text-[26px] font-semibold">{where === 'Anywhere' ? 'On everyone’s list' : where === 'Near me' ? `Around ${me.hood}` : `In ${where}`}</h2>
+              <p className="mt-0.5 text-[14px] text-[var(--color-ink-3)]">{way === 'all' ? 'Open goals from people around you. Tap one to help make it happen.' : activeWay.line}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="hidden items-center gap-3 text-[12px] text-[var(--color-ink-3)] sm:flex">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-ink-3)]" /> doing it
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full ring-[1.5px] ring-[var(--color-ink-3)] ring-inset" /> someday
+                </span>
+              </span>
+              <label className="chip !h-9 !pr-2">
+                <Icon name="pin" size={15} className="text-[var(--color-ocean)]" />
+                <select value={where} onChange={(e) => setWhere(e.target.value as LocationFilter)} className="bg-transparent pr-1 font-semibold text-[var(--color-night)] outline-none" aria-label="Where">
+                  {LOCATION_FILTERS.map((l) => (
+                    <option key={l} value={l}>
+                      {l === 'Near me' ? 'Within 5 km' : l}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
-          <div className="rounded-[var(--radius-xl2)] bg-white/70 p-5 ring-1 ring-[var(--color-line)] backdrop-blur md:p-6">
-            <p className="eyebrow">Your bucket list doesn't have to be done alone</p>
-            <p className="display mt-2 text-[22px] font-semibold leading-tight">Four ways people make each other's goals happen.</p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
-              {WAYS.map((w) => (
-                <div key={w.name} className="rounded-2xl bg-white p-3.5 ring-1 ring-[var(--color-line)]">
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full ${w.tone}`}>
-                    <Icon name={w.icon} size={16} />
-                  </span>
-                  <p className="mt-2.5 font-semibold">{w.name}</p>
-                  <p className="text-[13px] leading-snug text-[var(--color-ink-3)]">{w.line}</p>
+          {rows.length ? (
+            <div className="space-y-3">
+              {rows.map((r, i) => (
+                <div key={r.person.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}>
+                  <PersonRow person={r.person} goals={r.goals} />
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-[1440px] space-y-16 px-4 py-12 md:px-8 md:py-16">
-        {/* ---------------- Around you ---------------- */}
-        <section>
-          <SectionHead
-            title={`Around ${me.hood}`}
-            sub="The bucketlists of people within a few kilometres."
-            action={
-              <Link to={{ name: 'discover' }} className="btn btn-ghost btn-sm hidden sm:inline-flex">
-                See all <Icon name="arrowRight" size={16} />
-              </Link>
-            }
-          />
-          <Row>
-            {around.map((l) => (
-              <ListCard key={l.owner.id} owner={l.owner} goals={l.goals} total={l.total} compact />
-            ))}
-          </Row>
+          ) : (
+            <Empty title="Quiet here." body={activeWay.empty + ' Try a wider area.'} />
+          )}
         </section>
 
-        {/* ---------------- Matching ---------------- */}
-        <section className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]">
-          <div>
-            <SectionHead title="You might be able to help" sub={`Matched to what you know — ${me.interests.slice(0, 3).join(', ').toLowerCase()}.`} />
-            <div className="grid gap-5 sm:grid-cols-2">
-              {matches.slice(0, 2).map(({ goal, reason }) => (
-                <GoalCard key={goal.id} goal={goal} variant="compact" reason={`${reason} · ${placeLabel(goal, me.hood).split(' · ')[1]}`} />
+        {/* ---------------- Rail ---------------- */}
+        <aside className="space-y-8 lg:sticky lg:top-[92px] lg:self-start">
+          {matches.length > 0 && (
+            <RailBlock title="You might be able to help" sub={`Matched to what you know.`}>
+              {matches.map(({ goal, reason }) => (
+                <MiniGoal key={goal.id} goal={goal} line={`${state.people[goal.ownerId].first} · ${reason.toLowerCase()} · ${placeLabel(goal, me.hood).split(' · ')[1]}`} />
               ))}
-            </div>
-          </div>
-          <div>
-            <SectionHead title="You might know someone" sub="Sometimes the best help is an introduction." />
-            <div className="space-y-3">
-              {intros.map(({ goal, friend, reason }) => {
-                const owner = state.people[goal.ownerId];
-                return (
-                  <div key={goal.id} className="card flex gap-4 p-4">
-                    <button onClick={() => go({ name: 'goal', id: goal.id })} className="shrink-0">
-                      <GoalImage goal={goal} className="h-20 w-20 overflow-hidden rounded-2xl" />
+            </RailBlock>
+          )}
+          {!isBiz && intros.length > 0 && (
+            <RailBlock title="You might know someone" sub="Sometimes the best help is an intro.">
+              {intros.map(({ goal, friend, reason }) => (
+                <MiniGoal
+                  key={goal.id}
+                  goal={goal}
+                  line={
+                    <span className="flex items-center gap-1.5">
+                      <Avatar person={friend} size={16} /> {friend.first} · {reason}
+                    </span>
+                  }
+                  action={
+                    <button className="btn btn-quiet btn-sm !h-8 !text-[13px]" onClick={() => open({ type: 'help', goalId: goal.id, mode: 'someone', friendId: friend.id })}>
+                      Introduce {friend.first}
                     </button>
-                    <div className="min-w-0 flex-1">
-                      <button onClick={() => go({ name: 'goal', id: goal.id })} className="text-left font-semibold leading-tight hover:underline">
-                        {goal.emoji} {goal.title}
-                      </button>
-                      <p className="mt-1 text-[13px] text-[var(--color-ink-3)]">
-                        {owner.first} needs: {goal.needs[0]?.toLowerCase() ?? 'a hand'}.
-                      </p>
-                      <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--color-ink-3)]">
-                          <Avatar person={friend} size={20} />
-                          <span className="truncate">
-                            <b className="font-semibold text-[var(--color-ink-2)]">{friend.first}</b> · {reason}
-                          </span>
-                        </span>
-                        <button className="btn btn-quiet btn-sm !h-8 shrink-0 !text-[13px]" onClick={() => open({ type: 'help', goalId: goal.id, mode: 'someone', friendId: friend.id })}>
-                          Introduce
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* ---------------- Rallying ---------------- */}
-        <section>
-          <SectionHead title="People rallying around" sub="Goals picking up backers, sponsors and momentum." />
-          <Row>
-            {rallying.map((g) => (
-              <GoalCard key={g.id} goal={g} variant="compact" fixed />
-            ))}
-          </Row>
-        </section>
-
-        {/* ---------------- Your list + completed ---------------- */}
-        <section className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <div>
-            <SectionHead
-              title="Your bucketlist"
-              action={
-                <Link to={{ name: 'list' }} className="btn btn-ghost btn-sm">
-                  Open <Icon name="arrowRight" size={16} />
-                </Link>
-              }
-            />
-            <div className="card divide-y divide-[var(--color-line)] overflow-hidden">
-              {myActive.map((g) => (
-                <button key={g.id} onClick={() => go({ name: 'goal', id: g.id })} className="flex w-full items-center gap-4 p-4 text-left transition hover:bg-[var(--color-sand-wash)]">
-                  <GoalImage goal={g} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">
-                      {g.emoji} {g.title}
-                    </span>
-                    <span className="block text-[13px] text-[var(--color-ink-3)]">
-                      {g.status === 'progress' ? 'In progress' : 'Want to do'}
-                      {g.steps && g.steps.total > 1 ? ` · ${g.steps.done}/${g.steps.total} ${g.steps.label}` : ''}
-                      {g.funding?.enabled ? ` · ${money(g.funding.raised)} raised` : ''}
-                    </span>
-                  </span>
-                  <Icon name="arrowRight" size={16} className="text-[var(--color-ink-4)]" />
-                </button>
+                  }
+                />
               ))}
-              <button onClick={() => open({ type: 'composer' })} className="flex w-full items-center gap-3 p-4 font-semibold text-[var(--color-ocean)] transition hover:bg-[var(--color-sky-wash)]">
-                <span className="flex h-14 w-14 items-center justify-center rounded-xl border-2 border-dashed border-[var(--color-ocean)]/30">
-                  <Icon name="plus" size={20} />
-                </span>
-                What's next?
-              </button>
-            </div>
-          </div>
-          <div>
-            <SectionHead title="Recently done" sub="From people you know." />
-            <div className="grid grid-cols-2 gap-3">
-              {completed.map((g) => {
-                const o = state.people[g.ownerId];
-                return (
-                  <button key={g.id} onClick={() => go({ name: 'goal', id: g.id })} className="group relative overflow-hidden rounded-[var(--radius-card)] text-left">
-                    <GoalImage goal={g} className="aspect-[4/5] w-full transition duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[rgb(8_14_34/0.85)] via-[rgb(8_14_34/0.15)] to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                      <span className="pill bg-[var(--color-sun)] text-[var(--color-night)]">
-                        <Icon name="check" size={12} strokeWidth={3} /> {o.first} did it
+            </RailBlock>
+          )}
+          {rallying.length > 0 && (
+            <RailBlock title="People rallying around" sub="Picking up backers right now.">
+              {rallying.map((g) => (
+                <MiniGoal
+                  key={g.id}
+                  goal={g}
+                  line={
+                    <span className="block space-y-1.5">
+                      <span className="block">
+                        {state.people[g.ownerId].first} · {money(g.funding!.raised)} of {money(g.funding!.target)} · {helpingLine(state, g)}
                       </span>
-                      <p className="mt-2 font-semibold leading-tight">{g.title}</p>
-                      <p className="quote mt-1 line-clamp-2 text-[15px] text-white/85">{g.outcome}</p>
-                      <p className="mt-1 text-[11px] text-white/60">{g.completedAt ? `${timeAgo(g.completedAt)} ago` : ''}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Business perspective                                                */
-/* ------------------------------------------------------------------ */
-
-function BusinessHome() {
-  const { state, me } = useStore();
-  const { go } = useUI();
-  const visible = useVisibleGoals();
-  const open = visible.filter((g) => g.sponsorship?.open && g.status !== 'done' && g.ownerId !== me.id);
-  const matched = matchesFor(state, me, open);
-  const matchedIds = new Set(matched.map((m) => m.goal.id));
-  const rest = open.filter((g) => !matchedIds.has(g.id)).sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0));
-  const mine = state.sponsorOffers.filter((o) => o.fromId === me.id);
-
-  return (
-    <div className="animate-fade">
-      <section className="golden-glow relative overflow-hidden text-white">
-        <div className="mx-auto max-w-[1440px] px-4 pt-12 pb-14 md:px-8 md:pt-16 md:pb-20">
-          <div className="flex items-center gap-3">
-            <Avatar person={me} size={44} />
-            <div>
-              <p className="text-[13px] font-semibold text-white/80">{greeting()},</p>
-              <p className="font-semibold">{me.name}</p>
-            </div>
-          </div>
-          <h1 className="display mt-6 max-w-3xl text-[42px] font-semibold sm:text-[60px] lg:text-[72px]">Whose goal could you make happen this week?</h1>
-          <p className="mt-4 max-w-xl text-[17px] text-white/85">
-            The best sponsor isn't the one who gives the most. It's the one who removes the biggest obstacle. Here's where {me.kind === 'business' ? 'what you do' : 'you'} could matter.
-          </p>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-[1440px] space-y-16 px-4 py-12 md:px-8 md:py-16">
-        {matched.length > 0 && (
-          <section>
-            <SectionHead title="Matched to what you do" sub={`Goals that need exactly the kind of thing ${me.name} has.`} />
-            <div className="masonry">
-              {matched.map(({ goal, reason }) => (
-                <GoalCard key={goal.id} goal={goal} reason={reason} />
+                      <FundingBar raised={g.funding!.raised} target={g.funding!.target} size="sm" />
+                    </span>
+                  }
+                />
               ))}
-            </div>
-          </section>
-        )}
-
-        {mine.length > 0 && (
-          <section>
-            <SectionHead title="Your offers" />
-            <div className="card divide-y divide-[var(--color-line)]">
-              {mine.map((o) => {
-                const g = state.goals[o.goalId];
-                return (
-                  <button key={o.id} onClick={() => go({ name: 'goal', id: g.id })} className="flex w-full items-center gap-4 p-4 text-left hover:bg-[var(--color-sand-wash)]">
-                    <GoalImage goal={g} className="h-14 w-14 shrink-0 overflow-hidden rounded-xl" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{g.title}</span>
-                      <span className="block truncate text-[13px] text-[var(--color-ink-3)]">{offerSummary(o)}</span>
-                    </span>
-                    <span className={`pill ${o.status === 'accepted' ? 'bg-[var(--color-sun)]' : o.status === 'declined' ? 'bg-[var(--color-mist)] text-[var(--color-ink-3)]' : 'bg-[var(--color-sky-wash)] text-[var(--color-ocean-deep)]'}`}>
-                      {o.status === 'accepted' ? 'Accepted' : o.status === 'declined' ? 'Declined' : 'Waiting'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section>
-          <SectionHead title="Looking for a sponsor" sub="Nearby goals where the owner has asked for business support." />
-          <div className="masonry">
-            {rest.map((g) => (
-              <GoalCard key={g.id} goal={g} />
-            ))}
-          </div>
-        </section>
+            </RailBlock>
+          )}
+        </aside>
       </div>
     </div>
   );
 }
+
+function wayTone(id: Way, on: boolean) {
+  if (on) return id === 'fund' ? 'bg-[var(--color-sun)] text-[var(--color-night)]' : id === 'promote' ? 'bg-white text-[var(--color-night)]' : 'bg-[var(--color-ocean)] text-white';
+  switch (id) {
+    case 'help':
+      return 'bg-[var(--color-sky-wash)] text-[var(--color-ocean)]';
+    case 'fund':
+      return 'bg-[var(--color-sun-wash)] text-[#8a6200]';
+    case 'sponsor':
+      return 'bg-[var(--color-sky-wash)] text-[var(--color-ocean-ink)]';
+    case 'promote':
+      return 'bg-[var(--color-sand-wash)] text-[var(--color-night)]';
+    default:
+      return 'bg-[var(--color-mist)] text-[var(--color-ink-2)]';
+  }
+}
+
+function RailBlock({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h3 className="display text-[19px] font-semibold">{title}</h3>
+      <p className="text-[13px] text-[var(--color-ink-3)]">{sub}</p>
+      <div className="mt-1 divide-y divide-[var(--color-line)]">{children}</div>
+    </section>
+  );
+}
+

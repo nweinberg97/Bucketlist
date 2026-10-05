@@ -8,7 +8,8 @@ import { useUI } from '../store/ui';
 
 export function Avatar({ person, size = 36, ring = false, className = '' }: { person: Person; size?: number; ring?: boolean; className?: string }) {
   const initials = person.kind === 'business' ? person.name.split(' ').slice(0, 2).map((w) => w[0]).join('') : person.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
-  const h = person.hue;
+  // same hue family as the person's feed tint (violets pulled into sky blue)
+  const h = person.hue > 250 && person.hue < 335 ? 228 : person.hue;
   const bg =
     person.kind === 'business'
       ? `linear-gradient(140deg, #062a78, #0b5cff)`

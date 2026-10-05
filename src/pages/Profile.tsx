@@ -200,7 +200,7 @@ export function Profile({ id }: { id: string }) {
               )}
 
               <section>
-                <h2 className="display mb-5 text-[28px] font-semibold">Done</h2>
+                <h2 className="display mb-5 text-[28px] font-semibold">Recently done</h2>
                 {done.length ? (
                   <ul className="card divide-y divide-[var(--color-line)]">
                     {done.map((g) => (

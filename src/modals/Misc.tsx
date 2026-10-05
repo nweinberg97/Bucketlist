@@ -148,7 +148,7 @@ export function GuideModal() {
   const alexPromo = state.promotions.find((p) => p.goalId === 'sarah-mural' && p.promoterId === 'alex');
 
   const steps: Step[] = [
-    { title: 'Discover', body: 'Local goals, as editorial stories.', as: 'alex', route: { name: 'discover' } },
+    { title: 'The feed', body: "People's open bucketlists, one row each.", as: 'alex', route: { name: 'home' } },
     { title: 'Search “surfing”', body: 'Synonyms and stems: surf, waves, Tofino.', as: 'alex', route: { name: 'discover', q: 'surfing' } },
     { title: "Open Sarah's goal", body: 'Learn to surf — Kitsilano.', as: 'alex', route: { name: 'goal', id: 'sarah-surf' } },
     { title: 'I can help', body: 'Edit the intro and send it.', as: 'alex', route: { name: 'goal', id: 'sarah-surf' }, modal: { type: 'help', goalId: 'sarah-surf' }, done: state.intros.some((i) => i.goalId === 'sarah-surf' && i.fromId === 'alex') },

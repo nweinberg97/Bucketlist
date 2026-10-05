@@ -137,8 +137,8 @@ function reducer(state: AppState, a: Action): AppState {
         actorId: me.id,
         goalId: g.id,
         refId: offer.id,
-        text: `${me.name} wants to help make '${g.title}' happen.`,
-        quote: offerSummary(offer),
+        text: `${me.name} wants to make '${g.title}' happen with you.`,
+        quote: offer.experience || offerSummary(offer),
       });
     }
 
