@@ -24,7 +24,7 @@ interface Pal {
 const PALETTES: Record<Palette, Pal> = {
   dawn: { sky: ['#7fb6ff', '#cfe3ff', '#ffe3c4'], sun: '#ffd27a', far: '#aac4ee', mid: '#7fa0da', near: '#3f63ae', water: ['#86b5f5', '#3d6fd6'], figure: '#1b2a55' },
   noon: { sky: ['#2f7bff', '#7ec3ff', '#e4f3ff'], sun: '#fff3c9', far: '#9cc6f2', mid: '#4c8be0', near: '#1d55b8', water: ['#3a8bff', '#0b4fd6'], figure: '#0d2a66' },
-  golden: { sky: ['#0b5cff', '#55b8ff', '#ffd27a'], sun: '#ffc83d', far: '#77a3ec', mid: '#2e62c9', near: '#0d3a93', water: ['#2f79ff', '#0a3e9e'], figure: '#071d4f' },
+  golden: { sky: ['#2a6cff', '#7cc4ff', '#ffd98c'], sun: '#ffc83d', far: '#8fb3ee', mid: '#3a6ccc', near: '#123f96', water: ['#2f79ff', '#0a3e9e'], figure: '#071d4f' },
   dusk: { sky: ['#0a2a73', '#3b6fd9', '#ff9e7a'], sun: '#ffc83d', far: '#5468b0', mid: '#2a3b7a', near: '#141b3d', water: ['#2d4fa8', '#101b47'], figure: '#0a0f24' },
   sand: { sky: ['#6fb1ff', '#bfe0ff', '#f7e2bd'], sun: '#ffc83d', far: '#ebcb97', mid: '#ddae6b', near: '#b97f3f', water: ['#5aa0ff', '#1d5fd0'], figure: '#4a2c10' },
   night: { sky: ['#050a22', '#0d2050', '#1d4282'], sun: '#eef2ff', far: '#1b2a5c', mid: '#111c40', near: '#080d22', water: ['#13245a', '#070d24'], figure: '#02040d' },
@@ -75,8 +75,18 @@ function Figure({ x, y, s = 1, color }: { x: number; y: number; s?: number; colo
   );
 }
 
-export function GoalArt({ scene, className = '', rounded = true }: { scene: Scene; className?: string; rounded?: boolean }) {
-  const uid = useId().replace(/:/g, '');
+export function GoalArt({ scene, className = '' }: { scene: Scene; className?: string }) {
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <ArtSvg scene={scene} className="absolute inset-0 h-full w-full" />
+      <div className="grain pointer-events-none absolute inset-0" />
+    </div>
+  );
+}
+
+/** The raw SVG — nestable inside other SVGs (the share card uses it so it can export to PNG). */
+export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene; className?: string; x?: number; y?: number; width?: number; height?: number }) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const p = PALETTES[scene.palette];
   const kind: SceneKind = scene.kind;
 
@@ -117,8 +127,7 @@ export function GoalArt({ scene, className = '', rounded = true }: { scene: Scen
   const isDark = scene.palette === 'night' || scene.palette === 'dusk';
 
   return (
-    <div className={`relative overflow-hidden ${rounded ? '' : ''} ${className}`}>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" role="img" aria-label="Goal artwork">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" className={className} x={x} y={y} width={width} height={height} role="img" aria-label="Goal artwork">
         <defs>
           <linearGradient id={g('sky')} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={p.sky[0]} />
@@ -239,8 +248,6 @@ export function GoalArt({ scene, className = '', rounded = true }: { scene: Scen
           </>
         )}
       </svg>
-      <div className="grain pointer-events-none absolute inset-0" />
-    </div>
   );
 }
 

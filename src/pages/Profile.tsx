@@ -32,9 +32,9 @@ export function Profile({ id }: { id: string }) {
           <div className="grain h-full w-full" />
         </div>
         <div className="mx-auto max-w-[1280px] px-4 md:px-8">
-          <div className="-mt-16 flex flex-wrap items-end gap-5 sm:-mt-20">
+          <div className="-mt-16 flex flex-wrap items-end gap-5 sm:-mt-20 sm:items-start">
             <Avatar person={p} size={128} className="ring-[6px] ring-[var(--color-cloud)] max-sm:!h-28 max-sm:!w-28" />
-            <div className="min-w-0 flex-1 pb-2">
+            <div className="min-w-0 flex-1 pb-2 sm:pt-20">
               <h1 className="display text-[38px] font-semibold sm:text-[48px]">{p.name}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-[var(--color-ink-3)]">
                 <span className="inline-flex items-center gap-1">
@@ -44,14 +44,14 @@ export function Profile({ id }: { id: string }) {
               </p>
             </div>
             {!isMe && !isBiz && (
-              <div className="flex gap-2 pb-2">
+              <div className="flex gap-2 pb-2 sm:pt-20">
                 <button className="btn btn-quiet btn-sm">
                   <Icon name="message" size={15} /> Message
                 </button>
               </div>
             )}
             {isMe && !isBiz && (
-              <button className="btn btn-help btn-sm mb-2" onClick={() => open({ type: 'composer' })}>
+              <button className="btn btn-help btn-sm mb-2 sm:mt-20" onClick={() => open({ type: 'composer' })}>
                 <Icon name="plus" size={16} /> Add a goal
               </button>
             )}

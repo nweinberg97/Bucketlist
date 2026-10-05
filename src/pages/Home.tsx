@@ -36,7 +36,13 @@ function PersonHome() {
   const active = others.filter((g) => g.status !== 'done');
 
   const around = useMemo(
-    () => active.filter((g) => (distanceKm(me.hood, g.hood) ?? 99) <= 5).sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0)).slice(0, 8),
+    () => {
+      const near = active.filter((g) => (distanceKm(me.hood, g.hood) ?? 99) <= 5).sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0));
+      // one goal per person first, so the row feels like a neighbourhood, not one profile
+      const seen = new Set<string>();
+      const firsts = near.filter((g) => (seen.has(g.ownerId) ? false : (seen.add(g.ownerId), true)));
+      return [...firsts, ...near.filter((g) => !firsts.includes(g))].slice(0, 8);
+    },
     [active, me.hood],
   );
   const matches = useMemo(() => matchesFor(state, me, active).slice(0, 4), [state, me, active]);
@@ -59,7 +65,7 @@ function PersonHome() {
     <div className="animate-fade">
       {/* ---------------- Hero ---------------- */}
       <section className="horizon-soft">
-        <div className="mx-auto grid max-w-[1440px] gap-10 px-4 pt-10 pb-12 md:px-8 md:pt-16 md:pb-16 lg:grid-cols-[1.25fr_1fr] lg:items-end">
+        <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-10 px-4 pt-10 pb-12 md:px-8 md:pt-16 md:pb-16 lg:grid-cols-[1.25fr_1fr] lg:items-end">
           <div>
             <p className="eyebrow">
               {greeting()}, {me.first}.
@@ -124,13 +130,13 @@ function PersonHome() {
           />
           <Row>
             {around.map((g) => (
-              <GoalCard key={g.id} goal={g} variant="compact" />
+              <GoalCard key={g.id} goal={g} variant="compact" fixed />
             ))}
           </Row>
         </section>
 
         {/* ---------------- Matching ---------------- */}
-        <section className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
+        <section className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]">
           <div>
             <SectionHead title="You might be able to help" sub={`Matched to what you know — ${me.interests.slice(0, 3).join(', ').toLowerCase()}.`} />
             <div className="grid gap-5 sm:grid-cols-2">
@@ -180,13 +186,13 @@ function PersonHome() {
           <SectionHead title="People rallying around" sub="Goals picking up backers, sponsors and momentum." />
           <Row>
             {rallying.map((g) => (
-              <GoalCard key={g.id} goal={g} variant="compact" />
+              <GoalCard key={g.id} goal={g} variant="compact" fixed />
             ))}
           </Row>
         </section>
 
         {/* ---------------- Your list + completed ---------------- */}
-        <section className="grid gap-10 lg:grid-cols-2">
+        <section className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           <div>
             <SectionHead
               title="Your bucketlist"

@@ -65,7 +65,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       baseHelpers: 18,
       funding: fund(1200, 680, 17),
       sponsorship: { open: true, need: 'A wall to paint, exterior paint, and a lift for two weekends.' },
-      scene: { kind: 'city', palette: 'golden', seed: 23 },
+      scene: { kind: 'city', palette: 'sand', seed: 23 },
       shares: 4,
       ago: 21,
     },
@@ -185,7 +185,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       story: 'Four years of Duolingo streaks and I still freeze when someone actually talks to me.',
       tags: ['spanish', 'language', 'conversation'],
       needs: ['A patient conversation partner'],
-      scene: { kind: 'hills', palette: 'noon', seed: 67 },
+      scene: { kind: 'dunes', palette: 'sand', seed: 67, balloons: true },
       ago: 12,
     },
     {
@@ -307,7 +307,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       baseHelpers: 34,
       funding: fund(3500, 1800, 41),
       sponsorship: { open: true, need: 'Soil, cedar lumber for 12 raised beds, and help with a water hookup.' },
-      scene: { kind: 'field', palette: 'noon', seed: 113 },
+      scene: { kind: 'field', palette: 'golden', seed: 113 },
       shares: 12,
       ago: 33,
     },
@@ -359,7 +359,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       baseHelpers: 6,
       funding: fund(3000, 1150, 19),
       sponsorship: { open: true, need: 'Printing for a first run of 300 copies.' },
-      scene: { kind: 'city', palette: 'noon', seed: 137 },
+      scene: { kind: 'city', palette: 'dawn', seed: 137 },
       ago: 28,
     },
     {
@@ -390,7 +390,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       baseHelpers: 8,
       funding: fund(8000, 2300, 29),
       sponsorship: { open: true, need: 'Studio space for eight weeks next summer.' },
-      scene: { kind: 'city', palette: 'golden', seed: 149 },
+      scene: { kind: 'city', palette: 'sand', seed: 149 },
       ago: 14,
     },
     {
@@ -422,7 +422,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       needs: ['A board, and someone to show me how not to fall in'],
       baseHelpers: 1,
       sponsorship: { open: true, need: 'A board to borrow and one lesson.' },
-      scene: { kind: 'ocean', palette: 'noon', seed: 157 },
+      scene: { kind: 'ocean', palette: 'dawn', seed: 157 },
       ago: 2,
     },
     {
@@ -478,7 +478,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       needs: ['Your secret spot'],
       steps: { done: 4, total: 10, label: 'restaurants' },
       baseHelpers: 14,
-      scene: { kind: 'city', palette: 'golden', seed: 179 },
+      scene: { kind: 'city', palette: 'dusk', seed: 179 },
       ago: 22,
     },
     {
@@ -542,7 +542,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       status: 'want',
       story: "I can build a canoe but I can't do a clean and jerk without looking like a folding chair.",
       tags: ['lifting', 'olympic lifting', 'fitness', 'gym'],
-      scene: { kind: 'ridges', palette: 'noon', seed: 199 },
+      scene: { kind: 'ridges', palette: 'dawn', seed: 199 },
       ago: 13,
     },
     {
@@ -585,7 +585,7 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       outcome: 'Passed! First student stood up on her third wave.',
       tags: ['surf', 'surfing', 'teaching', 'certification'],
       completedAt: now - 9 * DAY,
-      scene: { kind: 'ocean', palette: 'noon', seed: 227 },
+      scene: { kind: 'ocean', palette: 'dawn', seed: 227 },
       ago: 300,
     },
     {

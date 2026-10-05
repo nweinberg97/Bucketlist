@@ -86,7 +86,7 @@ function Signal({ goal }: { goal: Goal }) {
   );
 }
 
-export function GoalCard({ goal, variant = 'feed', reason }: { goal: Goal; variant?: 'feed' | 'compact'; reason?: string }) {
+export function GoalCard({ goal, variant = 'feed', reason, fixed = false }: { goal: Goal; variant?: 'feed' | 'compact'; reason?: string; fixed?: boolean }) {
   const { state, me } = useStore();
   const { go } = useUI();
   const owner = state.people[goal.ownerId];
@@ -99,7 +99,7 @@ export function GoalCard({ goal, variant = 'feed', reason }: { goal: Goal; varia
 
   return (
     <article
-      className={`group card cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${variant === 'compact' ? 'w-[300px] shrink-0 sm:w-[320px]' : ''}`}
+      className={`group card cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] ${fixed ? 'w-[290px] shrink-0 sm:w-[320px]' : ''}`}
       onClick={() => go({ name: 'goal', id: goal.id })}
       data-goal={goal.id}
     >
