@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../store/store';
-import { href, useUI, type Route } from '../store/ui';
+import { Link, useUI, type Route } from '../store/ui';
 import { Avatar } from './ui';
 import { Icon, type IconName } from './Icon';
 
@@ -29,13 +29,13 @@ export function Logo({ light = false, size = 22 }: { light?: boolean; size?: num
 
 function NavLink({ to, label, icon, active }: { to: Route; label: string; icon: IconName; active: boolean }) {
   return (
-    <a
-      href={href(to)}
+    <Link
+      to={to}
       className={`flex h-10 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition ${active ? 'bg-[var(--color-night)] text-[var(--color-cloud)]' : 'text-[var(--color-ink-2)] hover:bg-[var(--color-mist)] hover:text-[var(--color-night)]'}`}
     >
       <Icon name={icon} size={17} />
       {label}
-    </a>
+    </Link>
   );
 }
 
@@ -54,11 +54,11 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh pb-24 md:pb-0">
       {/* ---------------- Desktop / tablet top bar ---------------- */}
-      <header className="sticky top-0 z-40 border-b border-[var(--color-line)]/70 bg-[var(--color-cloud)]/85 backdrop-blur-xl">
+      <header className="sticky top-[env(safe-area-inset-top,0px)] z-40 border-b border-[var(--color-line)]/70 bg-[var(--color-cloud)]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-[68px] max-w-[1440px] items-center gap-3 px-4 md:px-8">
-          <a href="#/" aria-label="Bucketlist home" className="shrink-0">
+          <Link to={{ name: 'home' }} aria-label="Bucketlist home" className="shrink-0">
             <Logo />
-          </a>
+          </Link>
 
           <nav className="ml-4 hidden items-center gap-1 lg:flex" aria-label="Primary">
             <NavLink to={{ name: 'home' }} label="Home" icon="home" active={route.name === 'home'} />
@@ -85,8 +85,8 @@ export function Shell({ children }: { children: ReactNode }) {
                 <Icon name="plus" size={17} strokeWidth={2.4} /> Add a goal
               </button>
             )}
-            <a
-              href="#/activity"
+            <Link
+              to={{ name: 'activity' }}
               className={`relative flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[var(--color-mist)] ${route.name === 'activity' ? 'bg-[var(--color-mist)]' : ''}`}
               aria-label={`Activity${unread ? `, ${unread} new` : ''}`}
             >
@@ -96,7 +96,7 @@ export function Shell({ children }: { children: ReactNode }) {
                   {unread}
                 </span>
               )}
-            </a>
+            </Link>
             <button
               onClick={() => open({ type: 'persona' })}
               className="flex items-center gap-2 rounded-full py-1 pr-1 pl-1 transition hover:bg-[var(--color-mist)] md:pl-3"
@@ -158,9 +158,9 @@ export function Shell({ children }: { children: ReactNode }) {
 
 function TabLink({ to, icon, label, active }: { to: Route; icon: IconName; label: string; active: boolean }) {
   return (
-    <a href={href(to)} className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${active ? 'text-[var(--color-ocean)]' : 'text-[var(--color-ink-3)]'}`}>
+    <Link to={to} className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${active ? 'text-[var(--color-ocean)]' : 'text-[var(--color-ink-3)]'}`}>
       <Icon name={icon} size={22} strokeWidth={active ? 2.2 : 1.8} />
       {label}
-    </a>
+    </Link>
   );
 }

@@ -141,6 +141,7 @@ interface Step {
 export function GuideModal() {
   const { state, dispatch } = useStore();
   const { close, go, open, toast } = useUI();
+  const [confirmReset, setConfirmReset] = useState(false);
   const alexPromo = state.promotions.find((p) => p.goalId === 'sarah-mural' && p.promoterId === 'alex');
 
   const steps: Step[] = [
@@ -200,18 +201,20 @@ export function GuideModal() {
         <div className="mt-5 flex items-center justify-between border-t border-[var(--color-line)] pt-4">
           <span className="text-[12px] text-[var(--color-ink-4)]">State is saved in this browser.</span>
           <button
-            className="btn btn-ghost btn-sm !text-[13px]"
+            className={`btn btn-sm !text-[13px] ${confirmReset ? 'bg-[var(--color-coral)] text-white' : 'btn-ghost'}`}
             onClick={() => {
-              if (confirm('Reset the demo to its starting state?')) {
-                dispatch({ type: 'reset' });
-                close();
-                go({ name: 'home' });
-                toast('Demo reset');
+              if (!confirmReset) {
+                setConfirmReset(true);
+                return;
               }
+              dispatch({ type: 'reset' });
+              close();
+              go({ name: 'home' });
+              toast('Demo reset');
             }}
             data-reset
           >
-            <Icon name="refresh" size={14} /> Reset demo
+            <Icon name="refresh" size={14} /> {confirmReset ? 'Click again to reset' : 'Reset demo'}
           </button>
         </div>
       </div>

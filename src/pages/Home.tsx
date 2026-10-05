@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useStore, useVisibleGoals } from '../store/store';
-import { useUI } from '../store/ui';
+import { Link, useUI } from '../store/ui';
 import { GoalCard, GoalImage } from '../components/GoalCard';
 import { Avatar, SectionHead } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
@@ -123,9 +123,9 @@ function PersonHome() {
             title={`Around ${me.hood}`}
             sub="What people within a few kilometres want to do."
             action={
-              <a href="#/discover" className="btn btn-ghost btn-sm hidden sm:inline-flex">
+              <Link to={{ name: 'discover' }} className="btn btn-ghost btn-sm hidden sm:inline-flex">
                 See all <Icon name="arrowRight" size={16} />
-              </a>
+              </Link>
             }
           />
           <Row>
@@ -197,9 +197,9 @@ function PersonHome() {
             <SectionHead
               title="Your bucketlist"
               action={
-                <a href="#/list" className="btn btn-ghost btn-sm">
+                <Link to={{ name: 'list' }} className="btn btn-ghost btn-sm">
                   Open <Icon name="arrowRight" size={16} />
-                </a>
+                </Link>
               }
             />
             <div className="card divide-y divide-[var(--color-line)] overflow-hidden">

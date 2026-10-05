@@ -4,7 +4,7 @@ import { useUI } from '../store/ui';
 import { Avatar, Modal, ModalClose } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { PERSONAS } from '../data/people';
-import { ShareCardSvg, downloadSvgAsPng } from './ShareCard';
+import { ShareCardSvg, canDownload, svgToPng, triggerDownload } from './ShareCard';
 
 // lower-case the first letter unless it starts a proper noun / acronym ("Japan", "DJ")
 const lowerFirst = (s: string) => (/^(I\b|[A-Z]{2}|Japan|Vancouver|Tofino)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
@@ -115,6 +115,7 @@ export function ShareModal({ promotionId }: { promotionId: string }) {
   const { state, me } = useStore();
   const { close, toast } = useUI();
   const svg = useRef<SVGSVGElement>(null);
+  const [png, setPng] = useState<string | null>(null);
   const p = state.promotions.find((x) => x.id === promotionId);
   if (!p) return null;
   const goal = state.goals[p.goalId];
@@ -137,8 +138,9 @@ export function ShareModal({ promotionId }: { promotionId: string }) {
       <ModalClose onClose={close} />
       <div className="grid md:grid-cols-[1fr_340px]">
         <div className="horizon-soft flex items-center justify-center p-6 sm:p-10">
-          <div className="w-full max-w-[400px] animate-pop overflow-hidden rounded-[22px] shadow-[var(--shadow-modal)]" data-share-card>
+          <div className="relative w-full max-w-[400px] animate-pop overflow-hidden rounded-[22px] shadow-[var(--shadow-modal)]" data-share-card>
             <ShareCardSvg ref={svg} goal={goal} owner={owner} promoter={promoter} caption={p.caption} />
+            {png && <img src={png} alt={`Share card for ${goal.title}`} className="absolute inset-0 h-full w-full" />}
           </div>
         </div>
         <div className="flex flex-col p-6 sm:p-8">
@@ -151,9 +153,25 @@ export function ShareModal({ promotionId }: { promotionId: string }) {
           </p>
 
           <div className="mt-6 space-y-2">
-            <button className="btn btn-fund w-full" onClick={() => svg.current && downloadSvgAsPng(svg.current, `bucketlist-${goal.id}.png`).then(() => toast('Share card saved'))} data-download-card>
+            <button
+              className="btn btn-fund w-full"
+              onClick={async () => {
+                if (!svg.current) return;
+                try {
+                  const url = await svgToPng(svg.current);
+                  if (canDownload()) {
+                    triggerDownload(url, `bucketlist-${goal.id}.png`);
+                    toast('Share card saved');
+                  } else setPng(url);
+                } catch {
+                  toast("Couldn't render the image — try a screenshot");
+                }
+              }}
+              data-download-card
+            >
               <Icon name="download" size={17} /> Download image
             </button>
+            {png && <p className="text-[12.5px] text-[var(--color-ink-3)]">Your image is on the left — right-click or long-press it to save.</p>}
             <button className="btn btn-quiet w-full" onClick={() => copy(`${p.caption}\n\n${link}`, 'Caption + link copied')}>
               <Icon name="link" size={17} /> Copy caption & link
             </button>

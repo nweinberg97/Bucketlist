@@ -150,7 +150,7 @@ export function Profile({ id }: { id: string }) {
                   ))}
                 </div>
               ) : (
-                <Empty title="No sponsorships yet." body="Find a goal nearby where what you do removes the biggest obstacle." action={<a href="#/discover" className="btn btn-sponsor">Find a goal</a>} />
+                <Empty title="No sponsorships yet." body="Find a goal nearby where what you do removes the biggest obstacle." action={<button className="btn btn-sponsor" onClick={() => go({ name: 'discover' })}>Find a goal</button>} />
               )}
             </section>
           ) : (

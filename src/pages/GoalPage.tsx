@@ -11,7 +11,7 @@ import { RequestCard } from './Activity';
 
 export function GoalPage({ id }: { id: string }) {
   const { state, me } = useStore();
-  const { go, open } = useUI();
+  const { go, open, back } = useUI();
   const goal = state.goals[id];
   const visible = useVisibleGoals();
 
@@ -46,7 +46,7 @@ export function GoalPage({ id }: { id: string }) {
   return (
     <div className="animate-fade">
       <div className="mx-auto max-w-[1280px] px-4 pt-5 md:px-8 md:pt-8">
-        <button onClick={() => history.length > 1 ? history.back() : go({ name: 'discover' })} className="btn btn-ghost btn-sm -ml-3 mb-4">
+        <button onClick={back} className="btn btn-ghost btn-sm -ml-3 mb-4">
           <Icon name="arrowLeft" size={16} /> Back
         </button>
 
@@ -369,6 +369,7 @@ function OwnerPanel({ goal }: { goal: Goal }) {
   const { open, toast, go } = useUI();
   const [target, setTarget] = useState(String(goal.funding?.target ?? 500));
   const [need, setNeed] = useState(goal.sponsorship?.need ?? '');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const helping = helperCount(state, goal);
   const pct = fundedPct(goal);
   const update = (patch: Partial<Goal>) => dispatch({ type: 'goal/update', id: goal.id, patch });
@@ -427,16 +428,21 @@ function OwnerPanel({ goal }: { goal: Goal }) {
             <Icon name="edit" size={15} /> Edit
           </button>
           <button
-            className="btn btn-ghost btn-sm text-[var(--color-ink-3)]"
+            className={`btn btn-sm ${confirmDelete ? 'bg-[var(--color-coral)] text-white' : 'btn-ghost text-[var(--color-ink-3)]'}`}
             onClick={() => {
-              if (confirm('Remove this goal from your bucketlist?')) {
-                dispatch({ type: 'goal/delete', id: goal.id });
-                toast('Goal removed');
-                go({ name: 'list' });
+              if (!confirmDelete) {
+                setConfirmDelete(true);
+                setTimeout(() => setConfirmDelete(false), 3500);
+                return;
               }
+              dispatch({ type: 'goal/delete', id: goal.id });
+              toast('Goal removed');
+              go({ name: 'list' });
             }}
+            aria-label="Remove goal"
           >
             <Icon name="trash" size={15} />
+            {confirmDelete && 'Remove?'}
           </button>
         </div>
       </div>

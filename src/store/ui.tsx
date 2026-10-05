@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 
 /* ------------------------------------------------------------------ */
 /* Hash router — tiny on purpose; the prototype has six routes.        */
@@ -73,6 +73,8 @@ interface Toast {
 interface UIValue {
   route: Route;
   go: (r: Route) => void;
+  back: () => void;
+  canGoBack: boolean;
   modal: Modal | null;
   open: (m: Modal) => void;
   close: () => void;
@@ -82,25 +84,41 @@ interface UIValue {
 
 const UIContext = createContext<UIValue | null>(null);
 
+/**
+ * Routing lives in React state with its own back stack. The URL hash mirrors it when the
+ * host allows (replaceState), so deep links work locally — and the app still navigates
+ * inside sandboxed frames where history and hash changes are restricted.
+ */
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [route, setRoute] = useState<Route>(() => parseHash(window.location.hash));
+  const [stack, setStack] = useState<Route[]>(() => [parseHash(window.location.hash)]);
   const [modal, setModal] = useState<Modal | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const route = stack[stack.length - 1];
 
   useEffect(() => {
+    try {
+      const h = href(route);
+      if (window.location.hash !== h) history.replaceState(null, '', h);
+    } catch {
+      /* sandboxed frame — state routing still works */
+    }
+    window.scrollTo({ top: 0 });
+  }, [route]);
+
+  useEffect(() => {
+    // manual hash edits / plain anchors
     const onHash = () => {
-      setRoute(parseHash(window.location.hash));
-      window.scrollTo({ top: 0 });
+      const r = parseHash(window.location.hash);
+      setStack((st) => (href(st[st.length - 1]) === href(r) ? st : [...st, r]));
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   const go = useCallback((r: Route) => {
-    const h = href(r);
-    if (window.location.hash === h) setRoute(parseHash(h));
-    else window.location.hash = h;
+    setStack((st) => (href(st[st.length - 1]) === href(r) ? [...st.slice(0, -1), r] : [...st.slice(-30), r]));
   }, []);
+  const back = useCallback(() => setStack((st) => (st.length > 1 ? st.slice(0, -1) : [{ name: 'discover' }])), []);
 
   const toast = useCallback((text: string, tone: Toast['tone'] = 'default') => {
     const id = Date.now() + Math.random();
@@ -109,10 +127,28 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ route, go, modal, open: setModal, close: () => setModal(null), toasts, toast }),
-    [route, go, modal, toasts, toast],
+    () => ({ route, go, back, canGoBack: stack.length > 1, modal, open: setModal, close: () => setModal(null), toasts, toast }),
+    [route, go, back, stack.length, modal, toasts, toast],
   );
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
+}
+
+/** An anchor that routes in-app (keeps a real href for accessibility and new-tab use). */
+export function Link({ to, children, ...rest }: { to: Route; children: ReactNode } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>) {
+  const { go } = useUI();
+  return (
+    <a
+      href={href(to)}
+      {...rest}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        go(to);
+      }}
+    >
+      {children}
+    </a>
+  );
 }
 
 export function useUI() {

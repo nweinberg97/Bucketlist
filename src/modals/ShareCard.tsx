@@ -189,7 +189,8 @@ export const ShareCardSvg = forwardRef<SVGSVGElement, { goal: Goal; owner: Perso
   );
 });
 
-export async function downloadSvgAsPng(svg: SVGSVGElement, filename: string) {
+/** Render the SVG card to a PNG data URL (fonts fall back to system faces inside the image). */
+export async function svgToPng(svg: SVGSVGElement): Promise<string> {
   const xml = new XMLSerializer().serializeToString(svg);
   const url = URL.createObjectURL(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }));
   try {
@@ -203,11 +204,24 @@ export async function downloadSvgAsPng(svg: SVGSVGElement, filename: string) {
     canvas.width = CW;
     canvas.height = CH;
     canvas.getContext('2d')!.drawImage(img, 0, 0, CW, CH);
-    const a = document.createElement('a');
-    a.download = filename;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
+    return canvas.toDataURL('image/png');
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+/** Embedded/sandboxed frames silently block downloads, so callers show the image instead. */
+export function canDownload() {
+  try {
+    return window.self === window.top;
+  } catch {
+    return false;
+  }
+}
+
+export function triggerDownload(dataUrl: string, filename: string) {
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = dataUrl;
+  a.click();
 }
