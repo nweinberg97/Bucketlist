@@ -89,6 +89,10 @@ npm run dev
 
 Then open the printed localhost URL. `npm run build` produces a static build in `dist/`.
 
+### Live demo
+
+Every push to `main` builds and deploys to GitHub Pages via `.github/workflows/deploy.yml`. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The site then lives at `https://nweinberg97.github.io/bucketlist/`.
+
 ## What's simulated
 
 Sign-in (identity via Instagram / LinkedIn / TikTok is shown, not wired), payments, messaging, notifications delivery, and posting to social platforms. Everything else — creating, editing, privacy, completion, funding progress, sponsorship offers and responses, promotion requests and approvals, search, filtering, matching — is real client-side state.
