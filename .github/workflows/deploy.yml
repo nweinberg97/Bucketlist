@@ -25,6 +25,13 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - name: Smoke test the build in a real browser (served at /Bucketlist/ like Pages)
+        run: |
+          npx playwright install --with-deps chromium
+          mkdir -p /tmp/site && cp -r dist /tmp/site/Bucketlist
+          (cd /tmp/site && python3 -m http.server 4173 >/dev/null 2>&1 &)
+          sleep 1
+          node scripts/smoke.mjs http://localhost:4173/Bucketlist/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
