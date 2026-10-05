@@ -220,8 +220,8 @@ export function Empty({ title, body, action }: { title: string; body: string; ac
       <svg viewBox="0 0 60 80" className="mx-auto mb-4 h-16 w-12 animate-float" aria-hidden="true">
         <path d="M30 4C44 4 50 18 46 30 43 38 36 46 34 52H26C24 46 17 38 14 30 10 18 16 4 30 4Z" fill="#ffc83d" />
         <path d="M30 4C36 4 38 18 36 30 35 38 32 46 31.5 52H28.5C28 46 25 38 24 30 22 18 24 4 30 4Z" fill="#ff8066" />
-        <path d="M26 52 27 60M34 52 33 60" stroke="#6b4a2a" strokeWidth="1.2" />
-        <rect x="25.5" y="60" width="9" height="7" rx="1.5" fill="#8a5d33" />
+        <path d="M26 52 27 57M34 52 33 57" stroke="#111318" strokeWidth="1" /><path d="M24.5 60.5C24.5 55 35.5 55 35.5 60.5" stroke="#111318" strokeWidth="1.2" fill="none" />
+        <path d="M23.5 60.5H36.5L35 69H25Z" fill="#111318" /><rect x="23" y="59.5" width="14" height="2.4" rx="1.1" fill="#3c4049" /><path d="M25 64.5H35" stroke="#ffc83d" strokeWidth="1.1" />
       </svg>
       <h3 className="display text-2xl font-semibold">{title}</h3>
       <p className="mx-auto mt-2 max-w-sm text-[15px] text-[var(--color-ink-3)]">{body}</p>

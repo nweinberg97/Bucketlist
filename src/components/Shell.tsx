@@ -2,26 +2,13 @@ import { useState, type ReactNode } from 'react';
 import { useStore } from '../store/store';
 import { Link, useUI, type Route } from '../store/ui';
 import { Avatar } from './ui';
+import { Mark } from './Mark';
 import { Icon, type IconName } from './Icon';
-
-/** The mark: a hot-air balloon — your goals lift you somewhere. */
-export function BalloonMark({ size = 28, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size * 1.12} viewBox="0 0 32 36" className={className} aria-hidden="true">
-      <path d="M16 1.5C25.5 1.5 30.2 9 28.6 16.4 27.4 22 21.6 25.2 19.6 28H12.4C10.4 25.2 4.6 22 3.4 16.4 1.8 9 6.5 1.5 16 1.5Z" fill="#0b5cff" />
-      <path d="M16 1.5C21 1.5 23 9 22.4 16.4 22 22 19.4 25.2 18.4 28H13.6C12.6 25.2 10 22 9.6 16.4 9 9 11 1.5 16 1.5Z" fill="#ffc83d" />
-      <path d="M16 1.5C17.8 1.5 18.6 9 18.4 16.4 18.2 22 17.2 25.2 16.8 28H15.2C14.8 25.2 13.8 22 13.6 16.4 13.4 9 14.2 1.5 16 1.5Z" fill="#ff8066" />
-      <path d="M6 10.5C9 8.6 23 8.6 26 10.5" stroke="#fffdf8" strokeWidth="1" fill="none" opacity=".55" />
-      <path d="M12.4 28 13.4 31M19.6 28 18.6 31" stroke="#111318" strokeWidth="1.1" strokeLinecap="round" />
-      <rect x="12.6" y="30.6" width="6.8" height="4.4" rx="1.2" fill="#8a5d33" />
-    </svg>
-  );
-}
 
 export function Logo({ light = false, size = 22 }: { light?: boolean; size?: number }) {
   return (
     <span className={`inline-flex items-center gap-1.5 ${light ? 'text-white' : 'text-[var(--color-night)]'}`}>
-      <BalloonMark size={size + 4} className="-mt-1" />
+      <Mark size={size + 6} className="-my-2" />
       <span className="display font-semibold tracking-[-0.04em]" style={{ fontSize: size }}>
         bucketlist
       </span>
