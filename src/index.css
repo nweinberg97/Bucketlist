@@ -293,6 +293,25 @@
   @media (width >= 90rem) {
     .masonry-lists { columns: 3; }
   }
+  /* list carousel: 1 card on phones (with a peek), 2 on tablets, 3 on desktop */
+  .carousel-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 86%;
+    gap: 1rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .carousel-track::-webkit-scrollbar { display: none; }
+  @media (width >= 40rem) {
+    .carousel-track { grid-auto-columns: calc((100% - 1rem) / 2); }
+  }
+  @media (width >= 64rem) {
+    .carousel-track { grid-auto-columns: calc((100% - 2rem) / 3); }
+  }
+  .carousel-slide { scroll-snap-align: start; min-width: 0; }
   .masonry > * {
     break-inside: avoid;
     margin-bottom: 1.25rem;

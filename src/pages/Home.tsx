@@ -3,7 +3,7 @@ import { offerSummary, useStore, useVisibleGoals } from '../store/store';
 import { useUI } from '../store/ui';
 import { Avatar, Empty, FundingBar } from '../components/ui';
 import { Icon } from '../components/Icon';
-import { MiniGoal, PersonRow, WAYS, groupByPerson, helpingLine, matchesWay, type Way } from '../components/Feed';
+import { ListCarousel, MiniGoal, WAYS, groupByPerson, helpingLine, matchesWay, type Way } from '../components/Feed';
 import { LOCATION_FILTERS, distanceKm, greeting, money, placeLabel, type LocationFilter } from '../lib/util';
 import { introSuggestions, matchesFor, popularity } from '../lib/search';
 
@@ -196,17 +196,7 @@ export function Home() {
             </div>
           </div>
 
-          {rows.length ? (
-            <div className="space-y-3">
-              {rows.map((r, i) => (
-                <div key={r.person.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}>
-                  <PersonRow person={r.person} goals={r.goals} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Empty title="Quiet here." body={activeWay.empty + ' Try a wider area.'} />
-          )}
+          {rows.length ? <ListCarousel rows={rows} /> : <Empty title="Quiet here." body={activeWay.empty + ' Try a wider area.'} />}
         </section>
 
         {/* ---------------- Rail ---------------- */}

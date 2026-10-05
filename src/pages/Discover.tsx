@@ -3,7 +3,7 @@ import { useStore, useVisibleGoals } from '../store/store';
 import { useUI } from '../store/ui';
 import { Empty } from '../components/ui';
 import { Icon } from '../components/Icon';
-import { PersonRow, WAYS, groupByPerson, matchesWay, type Way } from '../components/Feed';
+import { PersonCard, WAYS, groupByPerson, matchesWay, type Way } from '../components/Feed';
 import { CATEGORIES, LOCATION_FILTERS, type LocationFilter } from '../lib/util';
 import { DEFAULT_FILTERS, SUGGESTED_SEARCHES, expandQuery, filterGoals } from '../lib/search';
 
@@ -46,7 +46,7 @@ export function Discover({ q: routeQ }: { q?: string }) {
   };
 
   return (
-    <div className="mx-auto max-w-[920px] animate-fade px-4 py-10 md:px-8 md:py-14">
+    <div className="mx-auto max-w-[1180px] animate-fade px-4 py-10 md:px-8 md:py-14">
       <p className="eyebrow">Search</p>
       <h1 className="display mt-2 text-[38px] font-semibold sm:text-[48px]">Find something to help with.</h1>
 
@@ -110,9 +110,9 @@ export function Discover({ q: routeQ }: { q?: string }) {
         {q ? ` for “${q}”` : ''} on <b className="text-[var(--color-night)]">{rows.length}</b> {rows.length === 1 ? 'list' : 'lists'}
       </p>
       {rows.length ? (
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((r) => (
-            <PersonRow key={r.person.id} person={r.person} goals={r.goals} />
+            <PersonCard key={r.person.id} person={r.person} goals={r.goals} />
           ))}
         </div>
       ) : (
