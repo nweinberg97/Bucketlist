@@ -91,7 +91,7 @@ Then open the printed localhost URL. `npm run build` produces a static build in 
 
 ### Live demo
 
-Every push to `main` builds and deploys to GitHub Pages via `.github/workflows/deploy.yml`. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The site then lives at `https://nweinberg97.github.io/bucketlist/`.
+Every push to `main` builds and deploys to GitHub Pages via `.github/workflows/deploy.yml`. One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The site then lives at `https://nweinberg97.github.io/Bucketlist/`.
 
 ## What's simulated
 
