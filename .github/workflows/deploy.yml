@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -36,5 +37,20 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # While Pages is still set to "Deploy from a branch", GitHub also publishes the raw
+      # source (a blank page). Wait for that job so this proper build always lands last.
+      # Once Settings -> Pages -> Source is "GitHub Actions", this finds nothing and moves on.
+      - name: Wait for GitHub's branch deploy to finish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 40); do
+            pending=$(gh run list -R "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" --json name,status \
+              --jq '[.[] | select(.name == "pages build and deployment" and .status != "completed")] | length')
+            echo "branch deploys still running: $pending"
+            [ "$pending" = "0" ] && break
+            sleep 10
+          done
+          sleep 5
       - id: deployment
         uses: actions/deploy-pages@v4
