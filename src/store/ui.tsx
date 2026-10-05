@@ -59,6 +59,7 @@ export type Modal =
   | { type: 'sponsor'; goalId: string }
   | { type: 'promote'; goalId: string }
   | { type: 'share'; promotionId: string }
+  | { type: 'request'; kind: 'promote' | 'sponsor'; goalId: string }
   | { type: 'composer'; goalId?: string; title?: string }
   | { type: 'celebrate'; goalId: string }
   | { type: 'persona' }

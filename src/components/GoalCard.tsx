@@ -1,5 +1,7 @@
 import type { Goal } from '../types';
-import { GoalArt } from './GoalArt';
+import { useState } from 'react';
+import { ArtSvg } from './GoalArt';
+import { photoUrl } from '../data/photos';
 import { Avatar, FundingBar, PrivacyBadge } from './ui';
 import { Icon } from './Icon';
 import { helperCount, myOffersFor, useStore } from '../store/store';
@@ -8,9 +10,34 @@ import { backerCount, categoryEmoji, hash, money, placeLabel, timeAgo } from '..
 
 const ASPECTS = ['aspect-[4/5]', 'aspect-[1/1]', 'aspect-[5/4]', 'aspect-[4/5]', 'aspect-[3/4]'];
 
-export function GoalImage({ goal, className = '' }: { goal: Goal; className?: string }) {
-  if (goal.image) return <img src={goal.image} alt="" className={`object-cover ${className}`} loading="lazy" />;
-  return <GoalArt scene={goal.scene} className={className} />;
+/**
+ * Real photo when the goal has one (Unsplash for seeded goals, or the owner's upload);
+ * the illustrated scene sits underneath as the instant placeholder and the fallback.
+ */
+export function GoalImage({ goal, className = '', w = 900 }: { goal: Goal; className?: string; w?: number }) {
+  const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading');
+  const src = goal.image ?? (goal.photo ? photoUrl(goal.photo, w) : undefined);
+  return (
+    <div className={`relative overflow-hidden bg-[var(--color-sky-wash)] ${className}`}>
+      {state !== 'ok' && (
+        <>
+          <ArtSvg scene={goal.scene} className="absolute inset-0 h-full w-full" />
+          <div className="grain pointer-events-none absolute inset-0" />
+        </>
+      )}
+      {src && state !== 'error' && (
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setState('ok')}
+          onError={() => setState('error')}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${state === 'ok' ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
+    </div>
+  );
 }
 
 /** Contextual primary action — the goal decides what kind of help it most needs. */

@@ -1,4 +1,5 @@
-import { forwardRef, useMemo } from 'react';
+import { forwardRef, useEffect, useMemo, useState } from 'react';
+import { photoUrl } from '../data/photos';
 import type { Goal, Person } from '../types';
 import { ArtSvg } from '../components/GoalArt';
 import { fundedPct, hash, money, rng } from '../lib/util';
@@ -58,8 +59,8 @@ function QR({ seed, x, y, size }: { seed: number; x: number; y: number; size: nu
   );
 }
 
-export const ShareCardSvg = forwardRef<SVGSVGElement, { goal: Goal; owner: Person; promoter: Person; caption: string }>(function ShareCardSvg(
-  { goal, owner, promoter, caption },
+export const ShareCardSvg = forwardRef<SVGSVGElement, { goal: Goal; owner: Person; promoter: Person; caption: string; photo?: string }>(function ShareCardSvg(
+  { goal, owner, promoter, caption, photo },
   ref,
 ) {
   const titleLines = useMemo(() => wrap(goal.title, 20, 3), [goal.title]);
@@ -106,8 +107,8 @@ export const ShareCardSvg = forwardRef<SVGSVGElement, { goal: Goal; owner: Perso
 
       {/* artwork */}
       <g clipPath="url(#sc-art)">
-        {goal.image ? (
-          <image href={goal.image} x="0" y="0" width={CW} height={ART_H} preserveAspectRatio="xMidYMid slice" />
+        {goal.image || photo ? (
+          <image href={goal.image ?? photo} x="0" y="0" width={CW} height={ART_H} preserveAspectRatio="xMidYMid slice" />
         ) : (
           <ArtSvg scene={goal.scene} x={0} y={0} width={CW} height={ART_H} />
         )}
@@ -180,7 +181,12 @@ export const ShareCardSvg = forwardRef<SVGSVGElement, { goal: Goal; owner: Perso
 
       {/* brand footer */}
       <g transform={`translate(${CW - 72 - 300} ${CH - 62})`}>
-        <rect width="30" height="30" rx="9" fill="url(#sc-band)" />
+        <g transform="translate(2 -6) scale(1.05)">
+          <path d="M16 1.5C25.5 1.5 30.2 9 28.6 16.4 27.4 22 21.6 25.2 19.6 28H12.4C10.4 25.2 4.6 22 3.4 16.4 1.8 9 6.5 1.5 16 1.5Z" fill="#0b5cff" />
+          <path d="M16 1.5C21 1.5 23 9 22.4 16.4 22 22 19.4 25.2 18.4 28H13.6C12.6 25.2 10 22 9.6 16.4 9 9 11 1.5 16 1.5Z" fill="#ffc83d" />
+          <path d="M16 1.5C17.8 1.5 18.6 9 18.4 16.4 18.2 22 17.2 25.2 16.8 28H15.2C14.8 25.2 13.8 22 13.6 16.4 13.4 9 14.2 1.5 16 1.5Z" fill="#ff8066" />
+          <rect x="12.6" y="30.6" width="6.8" height="4.4" rx="1.2" fill="#8a5d33" />
+        </g>
         <text x="42" y="23" fill="#111318" fontFamily={display} fontSize="24" fontWeight="650" letterSpacing="-0.8">
           Discover more on bucketlist
         </text>
@@ -224,4 +230,36 @@ export function triggerDownload(dataUrl: string, filename: string) {
   a.download = filename;
   a.href = dataUrl;
   a.click();
+}
+
+/**
+ * The card is exported via canvas, which can't use remote images inside an SVG,
+ * so the goal's photo is pulled in as a data URL. If that's blocked, the illustration is used.
+ */
+export function usePhotoData(goal: Goal | undefined) {
+  const [data, setData] = useState<string | undefined>();
+  const url = goal?.photo && !goal.image ? photoUrl(goal.photo, 1080) : undefined;
+  useEffect(() => {
+    if (!url) return;
+    let alive = true;
+    fetch(url)
+      .then((r) => (r.ok ? r.blob() : Promise.reject()))
+      .then(
+        (b) =>
+          new Promise<string>((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res(fr.result as string);
+            fr.onerror = rej;
+            fr.readAsDataURL(b);
+          }),
+      )
+      .then((d) => alive && setData(d))
+      .catch(() => {
+        /* offline or blocked — the illustrated scene stands in */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [url]);
+  return data;
 }

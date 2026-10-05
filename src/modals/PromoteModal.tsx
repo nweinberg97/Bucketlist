@@ -4,14 +4,14 @@ import { useUI } from '../store/ui';
 import { Avatar, Modal, ModalClose } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { PERSONAS } from '../data/people';
-import { ShareCardSvg, canDownload, svgToPng, triggerDownload } from './ShareCard';
+import { ShareCardSvg, canDownload, svgToPng, triggerDownload, usePhotoData } from './ShareCard';
 
 // lower-case the first letter unless it starts a proper noun / acronym ("Japan", "DJ")
 const lowerFirst = (s: string) => (/^(I\b|[A-Z]{2}|Japan|Vancouver|Tofino)/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 
 export function PromoteModal({ goalId }: { goalId: string }) {
   const { state, me, dispatch } = useStore();
-  const { close, go, toast } = useUI();
+  const { close, go, toast, open } = useUI();
   const goal = state.goals[goalId];
   const owner = state.people[goal.ownerId];
   const existing = state.promotions.find((p) => p.goalId === goalId && p.promoterId === me.id && p.status === 'pending');
@@ -24,12 +24,13 @@ export function PromoteModal({ goalId }: { goalId: string }) {
       : `If you can help, reach out to ${owner.first} on Bucketlist.`;
   const [caption, setCaption] = useState(`I'm really inspired by ${owner.first}'s goal to ${lowerFirst(goal.title)}. ${ask}`);
   const [sent, setSent] = useState(!!existing);
+  const photo = usePhotoData(goal);
 
   const switchToOwner = () => {
     dispatch({ type: 'persona', id: owner.id });
-    close();
     go({ name: 'activity' });
     toast(`Now viewing as ${owner.first}`);
+    open({ type: 'request', kind: 'promote', goalId });
   };
 
   if (sent) {
@@ -103,7 +104,7 @@ export function PromoteModal({ goalId }: { goalId: string }) {
         <div className="hidden border-l border-[var(--color-line)] bg-[var(--color-mist)]/60 p-6 md:block">
           <p className="eyebrow mb-3">Preview</p>
           <div className="overflow-hidden rounded-2xl shadow-[var(--shadow-lift)]">
-            <ShareCardSvg goal={goal} owner={owner} promoter={me} caption={caption} />
+            <ShareCardSvg goal={goal} owner={owner} promoter={me} caption={caption} photo={photo} />
           </div>
         </div>
       </div>
@@ -117,6 +118,7 @@ export function ShareModal({ promotionId }: { promotionId: string }) {
   const svg = useRef<SVGSVGElement>(null);
   const [png, setPng] = useState<string | null>(null);
   const p = state.promotions.find((x) => x.id === promotionId);
+  const photo = usePhotoData(p ? state.goals[p.goalId] : undefined);
   if (!p) return null;
   const goal = state.goals[p.goalId];
   const owner = state.people[goal.ownerId];
@@ -139,7 +141,7 @@ export function ShareModal({ promotionId }: { promotionId: string }) {
       <div className="grid md:grid-cols-[1fr_340px]">
         <div className="horizon-soft flex items-center justify-center p-6 sm:p-10">
           <div className="relative w-full max-w-[400px] animate-pop overflow-hidden rounded-[22px] shadow-[var(--shadow-modal)]" data-share-card>
-            <ShareCardSvg ref={svg} goal={goal} owner={owner} promoter={promoter} caption={p.caption} />
+            <ShareCardSvg ref={svg} goal={goal} owner={owner} promoter={promoter} caption={p.caption} photo={photo} />
             {png && <img src={png} alt={`Share card for ${goal.title}`} className="absolute inset-0 h-full w-full" />}
           </div>
         </div>

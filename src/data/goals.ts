@@ -1,5 +1,19 @@
 import type { Goal, Scene } from '../types';
 import { SEED_PEOPLE } from './people';
+import { PHOTOS } from './photos';
+import type { Motif } from '../types';
+
+/** The subject drawn in each goal's illustrated fallback scene. */
+const MOTIFS: Record<string, Motif> = {
+  'sarah-surf': 'surfboard', 'sarah-mural': 'mural', 'sarah-japan': 'torii', 'sarah-openmic': 'guitar', 'sarah-dad': 'lanterns',
+  'sarah-half': 'finish', 'sarah-pottery': 'pottery', 'sarah-camp': 'tent', 'alex-wct': 'backpack', 'alex-spanish': 'coffee',
+  'alex-zine': 'camera', 'alex-garibaldi': 'tent', 'alex-sushi': 'sushi', 'maya-film': 'film',
+  'theo-ep': 'vinyl', 'priya-garden': 'garden', 'dev-ironman': 'bike', 'lucia-patagonia': 'backpack', 'ines-book': 'book',
+  'kai-game': 'lighthouse', 'rosa-residency': 'easel', 'priya-dinner': 'table', 'olivia-sup': 'paddleboard', 'olivia-volley': 'volleyball',
+  'marcus-dj': 'turntable', 'marcus-pasta': 'pasta', 'sam-restaurants': 'noodles', 'ben-standup': 'mic', 'elena-skydive': 'parachute',
+  'elena-hikebuddy': 'backpack', 'noah-canoe': 'canoe', 'noah-lift': 'barbell', 'hana-workshop': 'pottery', 'jamie-cert': 'surfboard',
+  'jamie-fiji': 'surfboard', 'theo-busk': 'guitar',
+};
 
 const DAY = 86_400_000;
 
@@ -20,6 +34,8 @@ function G(s: Seed, now: number): Goal {
     baseHelpers: 0,
     shares: 0,
     ...rest,
+    scene: { ...rest.scene, motif: MOTIFS[s.id] },
+    photo: PHOTOS[s.id],
     createdAt: now - ago * DAY,
   } as Goal;
 }
@@ -177,14 +193,14 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
     {
       id: 'alex-spanish',
       ownerId: 'alex',
-      title: 'Hold a 20-minute conversation in Spanish',
+      title: 'Spend a month in Mexico City speaking only Spanish',
       emoji: '🗣️',
       category: 'Learning',
       status: 'want',
       privacy: 'network',
-      story: 'Four years of Duolingo streaks and I still freeze when someone actually talks to me.',
-      tags: ['spanish', 'language', 'conversation'],
-      needs: ['A patient conversation partner'],
+      story: "Four years of Duolingo streaks and I still freeze when someone actually talks to me. The plan: a month in Roma Norte, no English, a lot of tacos.",
+      tags: ['spanish', 'language', 'conversation', 'mexico', 'travel'],
+      needs: ['A patient conversation partner before I go', 'Someone who knows CDMX'],
       scene: { kind: 'dunes', palette: 'sand', seed: 67, balloons: true },
       ago: 12,
     },
@@ -215,17 +231,17 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
       ago: 3,
     },
     {
-      id: 'alex-grandma',
+      id: 'alex-chief',
       ownerId: 'alex',
-      title: 'Call Grandma every Sunday',
-      emoji: '☎️',
+      title: 'Propose at sunrise on top of the Chief',
+      emoji: '💍',
       category: 'Relationships',
-      status: 'progress',
+      status: 'want',
       privacy: 'private',
-      story: 'She always picks up on the second ring.',
-      tags: ['family'],
-      steps: { done: 14, total: 52, label: 'Sundays' },
-      scene: { kind: 'field', palette: 'golden', seed: 79 },
+      story: "She doesn't know. Nobody knows. That's why this one is private.",
+      tags: ['hiking', 'squamish', 'sunrise'],
+      targetDate: '2027-06',
+      scene: { kind: 'ridges', palette: 'dawn', seed: 79 },
       ago: 100,
     },
     {
@@ -428,13 +444,13 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
     {
       id: 'olivia-volley',
       ownerId: 'olivia',
-      title: 'Join a beach volleyball league',
+      title: 'Play in the Kits Beach volleyball tournament',
       emoji: '🏐',
       category: 'Fitness',
       status: 'want',
-      story: 'I need a team that is fine with "enthusiastic but rusty."',
+      story: 'Watched it from a towel for six summers. Next August I want to be on the sand, even if we go out in the first round.',
       tags: ['volleyball', 'beach', 'league', 'rec league', 'team'],
-      needs: ['A team with a spot'],
+      needs: ['Three teammates who are fine with "enthusiastic but rusty"'],
       scene: { kind: 'ocean', palette: 'golden', seed: 163 },
       ago: 8,
     },
@@ -509,13 +525,13 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
     {
       id: 'elena-hikebuddy',
       ownerId: 'elena',
-      title: 'Find a hiking buddy for the North Shore',
+      title: 'Hike the Howe Sound Crest Trail end to end',
       emoji: '🥾',
       category: 'Relationships',
       status: 'want',
-      story: 'My schedule is weird and my friends are tired of hiking. Weekday mornings, Grouse to Lynn and beyond.',
-      tags: ['hiking', 'north shore', 'friends', 'trail'],
-      needs: ['A person who likes 7am starts'],
+      story: '29 km of ridgeline from Cypress to Porteau Cove. My friends are tired of hiking, so I need a buddy who likes 5am starts.',
+      tags: ['hiking', 'north shore', 'trail', 'backpacking'],
+      needs: ['A hiking buddy with a weekday off', 'A car shuttle between trailheads'],
       scene: { kind: 'ridges', palette: 'dawn', seed: 193 },
       ago: 1,
     },
@@ -536,11 +552,11 @@ export function seedGoals(now = Date.now()): Record<string, Goal> {
     {
       id: 'noah-lift',
       ownerId: 'noah',
-      title: 'Learn Olympic lifting',
+      title: 'Clean and jerk my bodyweight',
       emoji: '🏋️',
       category: 'Fitness',
       status: 'want',
-      story: "I can build a canoe but I can't do a clean and jerk without looking like a folding chair.",
+      story: "I can build a canoe but I can't do a clean and jerk without looking like a folding chair. 82 kg, overhead, by my 40th.",
       tags: ['lifting', 'olympic lifting', 'fitness', 'gym'],
       scene: { kind: 'ridges', palette: 'dawn', seed: 199 },
       ago: 13,

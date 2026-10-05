@@ -13,7 +13,7 @@ import { FundModal } from './modals/FundModal';
 import { SponsorModal } from './modals/SponsorModal';
 import { PromoteModal, ShareModal } from './modals/PromoteModal';
 import { Composer } from './modals/Composer';
-import { Celebrate, GuideModal, PersonaModal } from './modals/Misc';
+import { Celebrate, GuideModal, PersonaModal, RequestModal } from './modals/Misc';
 
 function Page() {
   const { route } = useUI();
@@ -61,6 +61,8 @@ function ModalHost() {
       return <PersonaModal />;
     case 'guide':
       return <GuideModal />;
+    case 'request':
+      return <RequestModal key={key} kind={modal.kind} goalId={modal.goalId} />;
   }
 }
 

@@ -52,7 +52,7 @@ export function GoalPage({ id }: { id: string }) {
 
         {/* ---------------- Hero ---------------- */}
         <div className="relative overflow-hidden rounded-[var(--radius-xl2)]">
-          <GoalImage goal={goal} className="aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[21/9]" />
+          <GoalImage goal={goal} className="aspect-[4/3] w-full sm:aspect-[16/9] lg:aspect-[2/1]" w={1800} />
           <div className="absolute inset-0 bg-gradient-to-t from-[rgb(6_14_36/0.82)] via-[rgb(6_14_36/0.2)] to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-8 md:p-10">
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -70,6 +70,15 @@ export function GoalPage({ id }: { id: string }) {
             </h1>
           </div>
         </div>
+        {goal.photo && !goal.image && (
+          <p className="mt-2 text-right text-[11px] text-[var(--color-ink-4)]">
+            Photo:{' '}
+            <a href={goal.photo.page} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+              {goal.photo.by}
+            </a>{' '}
+            on Unsplash
+          </p>
+        )}
       </div>
 
       <div className="mx-auto grid max-w-[1280px] gap-10 px-4 py-8 md:px-8 md:py-10 lg:grid-cols-[1fr_380px] lg:gap-14">

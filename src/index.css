@@ -290,6 +290,9 @@
   @media (width >= 90rem) {
     .masonry { columns: 4; }
   }
+  @media (width >= 90rem) {
+    .masonry-lists { columns: 3; }
+  }
   .masonry > * {
     break-inside: avoid;
     margin-bottom: 1.25rem;

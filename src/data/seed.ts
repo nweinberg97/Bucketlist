@@ -2,7 +2,7 @@ import type { AppState, Notification } from '../types';
 import { SEED_PEOPLE } from './people';
 import { seedGoals } from './goals';
 
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 const H = 3_600_000;
 const D = 24 * H;

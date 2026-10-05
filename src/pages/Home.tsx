@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useStore, useVisibleGoals } from '../store/store';
 import { Link, useUI } from '../store/ui';
 import { GoalCard, GoalImage } from '../components/GoalCard';
+import { ListCard } from '../components/ListCard';
 import { Avatar, SectionHead } from '../components/ui';
 import { Icon, type IconName } from '../components/Icon';
 import { distanceKm, greeting, money, placeLabel, timeAgo } from '../lib/util';
@@ -35,16 +36,17 @@ function PersonHome() {
   const others = visible.filter((g) => g.ownerId !== me.id);
   const active = others.filter((g) => g.status !== 'done');
 
-  const around = useMemo(
-    () => {
-      const near = active.filter((g) => (distanceKm(me.hood, g.hood) ?? 99) <= 5).sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0));
-      // one goal per person first, so the row feels like a neighbourhood, not one profile
-      const seen = new Set<string>();
-      const firsts = near.filter((g) => (seen.has(g.ownerId) ? false : (seen.add(g.ownerId), true)));
-      return [...firsts, ...near.filter((g) => !firsts.includes(g))].slice(0, 8);
-    },
-    [active, me.hood],
-  );
+  // Nearby people's lists — the neighbourhood, one person at a time
+  const around = useMemo(() => {
+    const owners = [...new Set(active.map((g) => g.ownerId))]
+      .map((id) => state.people[id])
+      .filter((p) => p.kind === 'person' && (distanceKm(me.hood, p.hood) ?? 99) <= 5)
+      .sort((a, b) => (distanceKm(me.hood, a.hood) ?? 0) - (distanceKm(me.hood, b.hood) ?? 0));
+    return owners.slice(0, 8).map((owner) => {
+      const goals = active.filter((g) => g.ownerId === owner.id).sort((a, b) => (a.status === 'progress' ? -1 : 1) - (b.status === 'progress' ? -1 : 1));
+      return { owner, goals, total: goals.length };
+    });
+  }, [active, me.hood, state.people]);
   const matches = useMemo(() => matchesFor(state, me, active).slice(0, 4), [state, me, active]);
   const intros = useMemo(() => introSuggestions(state, me, active).slice(0, 3), [state, me, active]);
   const rallying = useMemo(() => active.filter((g) => g.funding?.enabled || g.sponsorship?.open).sort((a, b) => popularity(state, b) - popularity(state, a)).slice(0, 6), [active, state]);
@@ -121,7 +123,7 @@ function PersonHome() {
         <section>
           <SectionHead
             title={`Around ${me.hood}`}
-            sub="What people within a few kilometres want to do."
+            sub="The bucketlists of people within a few kilometres."
             action={
               <Link to={{ name: 'discover' }} className="btn btn-ghost btn-sm hidden sm:inline-flex">
                 See all <Icon name="arrowRight" size={16} />
@@ -129,8 +131,8 @@ function PersonHome() {
             }
           />
           <Row>
-            {around.map((g) => (
-              <GoalCard key={g.id} goal={g} variant="compact" fixed />
+            {around.map((l) => (
+              <ListCard key={l.owner.id} owner={l.owner} goals={l.goals} total={l.total} compact />
             ))}
           </Row>
         </section>

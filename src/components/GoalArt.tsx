@@ -1,6 +1,7 @@
 import { useId, useMemo } from 'react';
-import type { Palette, Scene, SceneKind } from '../types';
+import type { Motif, Palette, Scene, SceneKind } from '../types';
 import { rng } from '../lib/util';
+import { MOTIFS } from './Motifs';
 
 /**
  * Generative "horizon" artwork.
@@ -85,7 +86,7 @@ export function GoalArt({ scene, className = '' }: { scene: Scene; className?: s
 }
 
 /** The raw SVG — nestable inside other SVGs (the share card uses it so it can export to PNG). */
-export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene; className?: string; x?: number; y?: number; width?: number; height?: number }) {
+export function ArtSvg({ scene, className, x, y, width, height, align = 'xMidYMid' }: { scene: Scene; className?: string; x?: number; y?: number; width?: number; height?: number; align?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const p = PALETTES[scene.palette];
   const kind: SceneKind = scene.kind;
@@ -127,7 +128,7 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
   const isDark = scene.palette === 'night' || scene.palette === 'dusk';
 
   return (
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" className={className} x={x} y={y} width={width} height={height} role="img" aria-label="Goal artwork">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio={`${align} slice`} className={className} x={x} y={y} width={width} height={height} role="img" aria-label="Goal artwork">
         <defs>
           <linearGradient id={g('sky')} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={p.sky[0]} />
@@ -189,10 +190,12 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
             {shapes.waves.map(([x, y, w], i) => (
               <path key={i} d={`M${x} ${y} q ${w / 2} -5 ${w} 0`} stroke="#fff" strokeOpacity={isDark ? 0.18 : 0.35} strokeWidth="1.6" fill="none" strokeLinecap="round" />
             ))}
+{!scene.motif && (
             <g transform={`translate(${shapes.figX} ${HORIZON + 92})`}>
               <rect x="-12" y="1" width="24" height="3.2" rx="1.6" fill={p.sun} opacity="0.95" />
-              <Figure x={0} y={1} s={0.9} color={p.figure} />
+              {!scene.motif && <Figure x={0} y={1} s={0.9} color={p.figure} />}
             </g>
+            )}
           </>
         )}
 
@@ -202,7 +205,7 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
             <rect y={HORIZON - 80} width={W} height="140" fill={`url(#${g('haze')})`} />
             <path d={shapes.mid} fill={p.mid} />
             <path d={shapes.near} fill={p.near} />
-            <Figure x={shapes.figX} y={HORIZON + 60} s={1.1} color={p.figure} />
+            {!scene.motif && <Figure x={shapes.figX} y={HORIZON + 60} s={1.1} color={p.figure} />}
           </>
         )}
 
@@ -215,7 +218,7 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
                 <rect key={i} x={40 + i * 66} y={HORIZON + 112 + (i % 2) * 6} width="50" height="9" rx="4.5" fill={p.sun} opacity="0.55" />
               ))}
             <path d={shapes.hillNear} fill={p.near} />
-            <Figure x={shapes.figX} y={HORIZON + 98} s={1.1} color={p.figure} />
+            {!scene.motif && <Figure x={shapes.figX} y={HORIZON + 98} s={1.1} color={p.figure} />}
           </>
         )}
 
@@ -224,7 +227,7 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
             <path d={shapes.hillFar} fill={p.far} />
             <path d={shapes.hillMid} fill={p.mid} />
             <path d={shapes.hillNear} fill={p.near} opacity="0.9" />
-            <Figure x={shapes.figX} y={HORIZON + 96} s={1.1} color={p.figure} />
+            {!scene.motif && <Figure x={shapes.figX} y={HORIZON + 96} s={1.1} color={p.figure} />}
           </>
         )}
 
@@ -244,15 +247,34 @@ export function ArtSvg({ scene, className, x, y, width, height }: { scene: Scene
               <rect key={i} x={shapes.sunX - (34 - i * 6)} y={HORIZON + 40 + i * 13} width={68 - i * 12} height="2.6" rx="1.3" fill={p.sun} opacity={0.55 - i * 0.1} />
             ))}
             <path d={`M0 ${H} L0 ${HORIZON + 118} Q ${W * 0.3} ${HORIZON + 100} ${W * 0.55} ${HORIZON + 122} T ${W} ${HORIZON + 112} L ${W} ${H} Z`} fill={p.near} />
-            <Figure x={shapes.figX} y={HORIZON + 116} s={1.1} color={p.figure} />
+            {!scene.motif && <Figure x={shapes.figX} y={HORIZON + 116} s={1.1} color={p.figure} />}
           </>
         )}
+        {scene.motif && MOTIFS[scene.motif] && <g transform="translate(100 168)">{MOTIFS[scene.motif]()}</g>}
       </svg>
   );
 }
 
 /* Pick a fitting scene for a brand-new goal from its words + category. */
+const MOTIF_WORDS: [RegExp, Motif][] = [
+  [/paddle|\bsup\b/, 'paddleboard'], [/surf/, 'surfboard'], [/mural|paint a wall/, 'mural'], [/japan|kyoto|tokyo/, 'torii'],
+  [/guitar|open mic|busk|band|song/, 'guitar'], [/marathon|\brun\b|race|5k|10k/, 'finish'], [/pottery|clay|ceramic/, 'pottery'],
+  [/camp|tent/, 'tent'], [/hike|trail|trek|backpack/, 'backpack'], [/spanish|french|language|italian lessons/, 'coffee'],
+  [/photo|camera|zine/, 'camera'], [/sushi/, 'sushi'], [/film|movie|documentary/, 'film'], [/\bep\b|album|record|vinyl/, 'vinyl'],
+  [/garden|grow|plant/, 'garden'], [/bike|cycl|ironman|triathlon/, 'bike'], [/book|novel|write/, 'book'], [/lighthouse|game/, 'lighthouse'],
+  [/paint|art|draw|residency/, 'easel'], [/dinner|feast|potluck|supper/, 'table'], [/volleyball/, 'volleyball'], [/\bdj\b|turntable/, 'turntable'],
+  [/pasta|italian|cook/, 'pasta'], [/ramen|noodle|restaurant|eat at/, 'noodles'], [/stand-?up|comedy|speech|sing/, 'mic'],
+  [/sky ?div|parachute/, 'parachute'], [/canoe|kayak|row/, 'canoe'], [/lift|deadlift|squat|clean and jerk/, 'barbell'],
+];
+
 export function sceneFor(title: string, category: string, seed: number): Scene {
+  const base = sceneBase(title, category, seed);
+  const t = title.toLowerCase();
+  const motif = MOTIF_WORDS.find(([re]) => re.test(t))?.[1];
+  return motif ? { ...base, motif } : base;
+}
+
+function sceneBase(title: string, category: string, seed: number): Scene {
   const t = title.toLowerCase();
   const pals: Palette[] = ['golden', 'dawn', 'noon', 'dusk'];
   const palette = pals[seed % pals.length];

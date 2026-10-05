@@ -25,7 +25,7 @@ const PRESETS: Record<string, Partial<Record<Kind, string>>> = {
 
 export function SponsorModal({ goalId }: { goalId: string }) {
   const { state, me, dispatch } = useStore();
-  const { close, go, toast } = useUI();
+  const { close, go, toast, open } = useUI();
   const goal = state.goals[goalId];
   const owner = state.people[goal.ownerId];
   const preset = PRESETS[me.id] ?? {};
@@ -94,9 +94,9 @@ export function SponsorModal({ goalId }: { goalId: string }) {
                 className="btn btn-help"
                 onClick={() => {
                   dispatch({ type: 'persona', id: owner.id });
-                  close();
                   go({ name: 'activity' });
                   toast(`Now viewing as ${owner.first}`);
+                  open({ type: 'request', kind: 'sponsor', goalId });
                 }}
                 data-switch-to-owner
               >

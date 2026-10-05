@@ -16,12 +16,20 @@ export type Status = 'want' | 'progress' | 'done';
 export type SceneKind = 'ocean' | 'ridges' | 'hills' | 'city' | 'dunes' | 'field' | 'aurora';
 export type Palette = 'dawn' | 'noon' | 'golden' | 'dusk' | 'sand' | 'night';
 
+export type Motif =
+  | 'surfboard' | 'paddleboard' | 'mural' | 'torii' | 'guitar' | 'lanterns' | 'finish' | 'pottery' | 'tent'
+  | 'backpack' | 'coffee' | 'camera' | 'phone' | 'sushi' | 'film' | 'vinyl' | 'garden' | 'bike' | 'book'
+  | 'lighthouse' | 'easel' | 'table' | 'volleyball' | 'turntable' | 'pasta' | 'noodles' | 'mic' | 'parachute'
+  | 'canoe' | 'barbell';
+
 export interface Scene {
   kind: SceneKind;
   palette: Palette;
   seed: number;
   /** a few small hot-air balloons drift in the sky */
   balloons?: boolean;
+  /** a foreground subject that shows the actual activity */
+  motif?: Motif;
 }
 
 export interface Person {
@@ -86,6 +94,8 @@ export interface Goal {
   outcome?: string;
   scene: Scene;
   image?: string;
+  /** real photography (Unsplash) for seeded goals */
+  photo?: { id: string; by: string; page: string };
   tags: string[];
   /** concrete things that would help */
   needs: string[];

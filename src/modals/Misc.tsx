@@ -6,6 +6,7 @@ import { GoalImage } from '../components/GoalCard';
 import { Icon } from '../components/Icon';
 import { PERSONAS } from '../data/people';
 import { helperCount } from '../store/store';
+import { RequestCard } from '../pages/Activity';
 
 /* ------------------------------------------------------------------ */
 /* "You did it." — the sunset moment                                   */
@@ -136,6 +137,8 @@ interface Step {
   route: Route;
   modal?: ModalT;
   done?: boolean;
+  /** custom runner for steps that depend on earlier ones */
+  action?: () => void;
 }
 
 export function GuideModal() {
@@ -154,11 +157,39 @@ export function GuideModal() {
     { title: 'Fund a creator', body: "Back Maya's short film with $25.", as: 'alex', route: { name: 'goal', id: 'maya-film' }, modal: { type: 'fund', goalId: 'maya-film' }, done: !!state.goals['maya-film']?.funding?.backers.some((b) => b.personId === 'alex') },
     { title: 'Sponsor as a business', body: "Westside Paint offers paint for Sarah's mural.", as: 'westside', route: { name: 'goal', id: 'sarah-mural' }, modal: { type: 'sponsor', goalId: 'sarah-mural' }, done: state.sponsorOffers.some((o) => o.fromId === 'westside' && o.goalId === 'sarah-mural') },
     { title: 'Promote', body: "Alex writes a caption for Sarah's mural.", as: 'alex', route: { name: 'goal', id: 'sarah-mural' }, modal: { type: 'promote', goalId: 'sarah-mural' }, done: !!alexPromo },
-    { title: 'Approve as Sarah', body: 'Accept the sponsor, approve the post.', as: 'sarah', route: { name: 'activity' }, done: alexPromo?.status === 'approved' },
-    { title: 'Share card', body: 'The growth loop, as an image.', as: 'alex', route: { name: 'activity' }, modal: alexPromo?.status === 'approved' ? { type: 'share', promotionId: alexPromo.id } : undefined, done: alexPromo?.status === 'approved' },
+    { title: 'Approve as Sarah', body: 'Sarah reviews the caption and approves it.', as: 'sarah', route: { name: 'activity' }, done: alexPromo?.status === 'approved', action: () => approveFlow() },
+    { title: 'Share card', body: 'The growth loop, as an image.', as: 'alex', route: { name: 'goal', id: 'sarah-mural' }, done: alexPromo?.status === 'approved', action: () => shareFlow() },
   ];
 
+  const DEFAULT_CAPTION =
+    "I'm really inspired by Sarah's goal to paint a community mural. If you know a business, building owner, or anyone with a wall to spare — connect them with Sarah.";
+
+  /** Make sure there's a request from Alex waiting, then show Sarah the approval. */
+  const approveFlow = () => {
+    if (!alexPromo) {
+      dispatch({ type: 'persona', id: 'alex' });
+      dispatch({ type: 'promote/request', goalId: 'sarah-mural', caption: DEFAULT_CAPTION });
+    }
+    if (alexPromo?.status === 'approved') return shareFlow();
+    dispatch({ type: 'persona', id: 'sarah' });
+    toast('Now viewing as Sarah Chen');
+    go({ name: 'activity' });
+    setTimeout(() => open({ type: 'request', kind: 'promote', goalId: 'sarah-mural' }), 60);
+  };
+
+  /** The card only exists once Sarah approves — if she hasn't yet, walk through that first. */
+  const shareFlow = () => {
+    if (alexPromo?.status !== 'approved') {
+      toast('Sarah has to approve it first');
+      return approveFlow();
+    }
+    dispatch({ type: 'persona', id: 'alex' });
+    go({ name: 'goal', id: 'sarah-mural' });
+    setTimeout(() => open({ type: 'share', promotionId: alexPromo.id }), 60);
+  };
+
   const run = (s: Step) => {
+    if (s.action) return s.action();
     if (state.me !== s.as) {
       dispatch({ type: 'persona', id: s.as });
       toast(`Now viewing as ${state.people[s.as].name}`);
@@ -216,6 +247,59 @@ export function GuideModal() {
           >
             <Icon name="refresh" size={14} /> {confirmReset ? 'Click again to reset' : 'Reset demo'}
           </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* A focused approval view — what the goal owner sees when a request lands */
+/* ------------------------------------------------------------------ */
+
+export function RequestModal({ kind, goalId }: { kind: 'promote' | 'sponsor'; goalId: string }) {
+  const { state, me } = useStore();
+  const { close, open } = useUI();
+  const goal = state.goals[goalId];
+  const pending =
+    kind === 'promote'
+      ? state.promotions.filter((p) => p.goalId === goalId && p.status === 'pending')
+      : state.sponsorOffers.filter((o) => o.goalId === goalId && o.status === 'pending');
+  const approved = kind === 'promote' ? state.promotions.find((p) => p.goalId === goalId && p.status === 'approved' && p.promoterId === 'alex') : undefined;
+
+  return (
+    <Modal onClose={close} label="Review request">
+      <ModalClose onClose={close} />
+      <div className="p-6 sm:p-7" data-request-modal>
+        <div className="flex items-center gap-3 pr-10">
+          <GoalImage goal={goal} className="h-14 w-14 shrink-0 rounded-xl" w={200} />
+          <div>
+            <p className="eyebrow">{me.first}'s goal</p>
+            <p className="display text-[22px] font-semibold leading-tight">
+              {goal.emoji} {goal.title}
+            </p>
+          </div>
+        </div>
+        <h2 className="display mt-6 text-[30px] font-semibold leading-tight">
+          {kind === 'promote' ? 'Someone wants to share your goal.' : 'Someone wants to sponsor your goal.'}
+        </h2>
+        <p className="mt-1 text-[15px] text-[var(--color-ink-3)]">
+          {kind === 'promote' ? "It's your ambition, so nothing goes out without your OK. You can edit their caption first." : 'Accept it, pass on it, or message them first.'}
+        </p>
+        <div className="mt-5 space-y-3">
+          {pending.map((r) => (
+            <RequestCard key={r.id} kind={kind} id={r.id} />
+          ))}
+          {pending.length === 0 && (
+            <div className="rounded-2xl bg-white p-5 text-center ring-1 ring-[var(--color-line)]">
+              <p className="font-semibold">All caught up.</p>
+              {approved && (
+                <button className="btn btn-fund btn-sm mt-3" onClick={() => open({ type: 'share', promotionId: approved.id })}>
+                  Open the share card
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

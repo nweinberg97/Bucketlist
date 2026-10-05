@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, useVisibleGoals } from '../store/store';
 import { useUI } from '../store/ui';
 import { GoalCard } from '../components/GoalCard';
+import { ListCard } from '../components/ListCard';
 import { Empty } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { CATEGORIES, LOCATION_FILTERS, type LocationFilter } from '../lib/util';
@@ -27,7 +28,25 @@ export function Discover({ q: routeQ }: { q?: string }) {
     return () => clearTimeout(t);
   }, [text]);
 
+  const [view, setView] = useState<'lists' | 'goals'>('lists');
   const results = useMemo(() => filterGoals(state, visible, f, me), [state, visible, f, me]);
+  const narrowed = !!f.q || !!f.category || f.funding || f.sponsor || f.status !== 'active';
+
+  // Group into people's lists, keeping the ranking order of each person's best match.
+  const lists = useMemo(() => {
+    const byOwner = new Map<string, typeof results>();
+    for (const g of results) {
+      if (!byOwner.has(g.ownerId)) byOwner.set(g.ownerId, []);
+      byOwner.get(g.ownerId)!.push(g);
+    }
+    return [...byOwner.entries()].map(([ownerId, matches]) => {
+      const all = visible.filter((g) => g.ownerId === ownerId && g.status !== 'done');
+      // when narrowed, lead with what matched; otherwise in-progress first
+      const rest = all.filter((g) => !matches.includes(g)).sort((a, b) => (a.status === 'progress' ? -1 : 1) - (b.status === 'progress' ? -1 : 1));
+      const ordered = narrowed ? matches : [...matches, ...rest].sort((a, b) => (a.status === 'progress' ? -1 : 1) - (b.status === 'progress' ? -1 : 1));
+      return { owner: state.people[ownerId], goals: ordered, total: Math.max(all.length, matches.length) };
+    });
+  }, [results, visible, state.people, narrowed]);
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((x) => ({ ...x, [k]: v }));
   const searchFor = (q: string) => {
     setText(q);
@@ -41,7 +60,8 @@ export function Discover({ q: routeQ }: { q?: string }) {
       <section className="horizon-soft">
         <div className="mx-auto max-w-[1440px] px-4 pt-10 pb-8 md:px-8 md:pt-14">
           <p className="eyebrow">Discover</p>
-          <h1 className="display mt-2 text-[40px] font-semibold sm:text-[56px]">What people around you want to do.</h1>
+          <h1 className="display mt-2 text-[40px] font-semibold sm:text-[56px]">What's on everyone's list.</h1>
+          <p className="mt-3 max-w-xl text-[16px] text-[var(--color-ink-3)]">Scroll through the public bucketlists of people around you. Tap anything you could help make happen.</p>
 
           <form
             onSubmit={(e) => {
@@ -158,7 +178,8 @@ export function Discover({ q: routeQ }: { q?: string }) {
 
       {/* ---------------- Results ---------------- */}
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
-        <p className="mb-5 text-[15px] text-[var(--color-ink-3)]" aria-live="polite">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[15px] text-[var(--color-ink-3)]" aria-live="polite">
           {f.q ? (
             <>
               <b className="font-semibold text-[var(--color-night)]">{results.length}</b> {results.length === 1 ? 'goal' : 'goals'} for “{f.q}”
@@ -168,15 +189,34 @@ export function Discover({ q: routeQ }: { q?: string }) {
               <b className="font-semibold text-[var(--color-night)]">{results.length}</b> goals {f.location === 'Anywhere' ? 'across Vancouver' : f.location === 'Near me' ? `within 5 km of ${me.hood}` : `in ${f.location}`}
             </>
           )}
+          {view === 'lists' && results.length > 0 && <> on <b className="font-semibold text-[var(--color-night)]">{lists.length}</b> {lists.length === 1 ? "person's list" : "people's lists"}</>}
         </p>
-        {results.length ? (
-          <div className="masonry">
-            {results.map((g, i) => (
-              <div key={g.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
-                <GoalCard goal={g} />
-              </div>
+          <div className="flex rounded-full bg-[var(--color-mist)] p-1" role="tablist" aria-label="View">
+            {(['lists', 'goals'] as const).map((v) => (
+              <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`flex h-8 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition ${view === v ? 'bg-white shadow-[var(--shadow-soft)]' : 'text-[var(--color-ink-3)]'}`} data-view={v}>
+                <Icon name={v === 'lists' ? 'users' : 'compass'} size={14} /> {v === 'lists' ? 'Bucketlists' : 'Single goals'}
+              </button>
             ))}
           </div>
+        </div>
+        {results.length ? (
+          view === 'lists' ? (
+            <div className="masonry masonry-lists">
+              {lists.map((l, i) => (
+                <div key={l.owner.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+                  <ListCard owner={l.owner} goals={l.goals} total={l.total} matched={narrowed} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="masonry">
+              {results.map((g, i) => (
+                <div key={g.id} className="animate-rise" style={{ animationDelay: `${Math.min(i, 10) * 35}ms` }}>
+                  <GoalCard goal={g} />
+                </div>
+              ))}
+            </div>
+          )
         ) : (
           <Empty
             title={f.q ? `Nobody's said “${f.q}” yet.` : 'Nothing here — yet.'}
