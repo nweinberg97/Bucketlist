@@ -1,5 +1,7 @@
 # Bucketlist
 
+> 🚧 **Status: actively in development.** This is a working prototype with some bugs and unfinished UI/features — not yet a polished, finished product.
+
 **Your bucket list doesn't have to be something you do alone.**
 
 Bucketlist is a product prototype for a social network built around a simple idea: what if your bucket list wasn't a private to-do list, but a way for other people to help you make things happen?
